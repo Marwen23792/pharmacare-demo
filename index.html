@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 30 30%27%3E%3Crect width=%2730%27 height=%2730%27 rx=%277%27 fill=%27%230a7357%27/%3E%3Cpath d=%27M12 6h6v6h6v6h-6v6h-6v-6H6v-6h6z%27 fill=%27white%27/%3E%3C/svg%3E">
+<style>body{margin:0}</style>
+<title>PharmaCare Démo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: app shell — slim left rail of screens, working area on the right; stacks to a top tab strip on phones. */
+:root{
+  --bg:#eef3f1; --surface:#ffffff; --sunk:#f6f9f8; --ink:#11201b; --muted:#5b6c67; --line:#d5e0dc;
+  --accent:#0a7357; --accent-soft:#dcefe8; --on-accent:#ffffff;
+  --danger:#b42318; --danger-soft:#fde8e6; --warn:#9a5a05; --warn-soft:#fdf1dc; --ok:#137a3f; --ok-soft:#ddf3e5;
+  --ctrlC:#137a3f;
+  --f-display:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c1412; --surface:#141f1c; --sunk:#101916; --ink:#e3ece9; --muted:#93a59f; --line:#253430;
+  --accent:#3bbd92; --accent-soft:#16362c; --on-accent:#06140f;
+  --danger:#f8776c; --danger-soft:#3a1714; --warn:#f5b64a; --warn-soft:#33250c; --ok:#4fd08f; --ok-soft:#12301f; --ctrlC:#4fd08f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1412; --surface:#141f1c; --sunk:#101916; --ink:#e3ece9; --muted:#93a59f; --line:#253430;
+  --accent:#3bbd92; --accent-soft:#16362c; --on-accent:#06140f;
+  --danger:#f8776c; --danger-soft:#3a1714; --warn:#f5b64a; --warn-soft:#33250c; --ok:#4fd08f; --ok-soft:#12301f; --ctrlC:#4fd08f; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body)}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:1.6rem} h2{font-size:1.15rem} h3{font-size:1rem}
+.num,.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a{color:var(--accent)}
+
+.demo-band{background:var(--ink);color:var(--bg);font-size:.82rem;padding-block:6px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.demo-band b{letter-spacing:.08em}
+.demo-band a{color:inherit}
+.app{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:calc(100vh - 34px)}
+.rail{background:var(--surface);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:18px}
+.brand{display:flex;align-items:center;gap:10px;padding:0 6px}
+.cross{width:30px;height:30px;flex:none}
+.brand strong{font-family:var(--f-display);font-size:1.2rem}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;border-radius:7px;text-decoration:none;color:var(--ink);font-weight:500}
+.nav a:hover{background:var(--sunk)}
+.nav a[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
+.nav .k{font:500 .72rem var(--f-mono);color:var(--muted)}
+.who{margin-top:auto;display:flex;flex-direction:column;gap:6px;font-size:.82rem;color:var(--muted)}
+.who select{width:100%;padding:7px 8px;border:1px solid var(--line);border-radius:7px;background:var(--sunk)}
+main{min-width:0;padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.head{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between}
+.head p{margin:0;color:var(--muted)}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.panel>h2,.panel>h3{margin-bottom:12px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.grid2{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);gap:20px;align-items:start}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.tile .lbl{font-size:.75rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.tile .val{font:600 1.45rem var(--f-mono);font-variant-numeric:tabular-nums}
+.tile .sub{font-size:.8rem;color:var(--muted)}
+
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:8px 14px;cursor:pointer;font-weight:500}
+.btn:hover{background:var(--sunk)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.primary:disabled{opacity:.45;cursor:not-allowed;filter:none}
+.btn.big{padding:13px 18px;font-size:1.05rem;width:100%}
+.btn.sm{padding:4px 10px;font-size:.85rem}
+.btn.danger{color:var(--danger)}
+.chip{border:1px solid var(--line);background:var(--sunk);border-radius:999px;padding:5px 12px;cursor:pointer;font-size:.85rem}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+
+label.f{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted);min-width:0;flex:1 1 160px}
+input.in,select.in{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--sunk);color:var(--ink)}
+input.in:focus{background:var(--surface)}
+input.amt{text-align:right;font-family:var(--f-mono)}
+.check{display:flex;gap:8px;align-items:center;cursor:pointer;font-weight:500}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th{text-align:left;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right}
+td.num{white-space:nowrap}
+.muted{color:var(--muted)}
+.small{font-size:.82rem}
+
+.badge{display:inline-block;font:600 .7rem var(--f-mono);padding:1px 6px;border-radius:4px;vertical-align:1px;margin-left:6px;border:1px solid currentColor}
+.badge.tA,.badge.tB{color:var(--danger);background:var(--danger-soft)}
+.badge.tC{color:var(--ctrlC);background:var(--ok-soft)}
+.badge.para{color:var(--muted)}
+.pill{display:inline-block;font-size:.76rem;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--danger-soft);color:var(--danger)}
+.pill.info{background:var(--accent-soft);color:var(--accent)}
+.lot{display:inline-flex;gap:6px;font:.78rem var(--f-mono);border:1px solid var(--line);border-radius:5px;padding:1px 6px;margin:2px 4px 2px 0;white-space:nowrap}
+.lot.warn{border-color:var(--warn);color:var(--warn)}
+.lot.bad{border-color:var(--danger);color:var(--danger);text-decoration:line-through}
+
+/* Caisse */
+.search{position:relative}
+.search input{font-size:1.05rem;padding:12px 14px}
+.results{position:absolute;z-index:5;left:0;right:0;top:calc(100% + 4px);background:var(--surface);border:1px solid var(--line);border-radius:9px;box-shadow:0 10px 30px rgb(0 0 0 / .14);max-height:340px;overflow:auto}
+.res{display:flex;justify-content:space-between;gap:12px;padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--line)}
+.res:last-child{border-bottom:0}
+.res:hover,.res.first{background:var(--sunk)}
+.res .gen{font-size:.8rem;color:var(--ok)}
+.qty{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.qty button{border:0;background:var(--sunk);width:28px;height:28px;cursor:pointer}
+.qty span{min-width:30px;text-align:center;font-family:var(--f-mono)}
+.empty{padding:28px 12px;text-align:center;color:var(--muted)}
+.sum{display:flex;flex-direction:column;gap:6px}
+.sum .l{display:flex;justify-content:space-between;gap:12px}
+.sum .l .num{font-weight:500}
+.sum .due{border-top:1px solid var(--line);padding-top:10px;margin-top:4px;align-items:baseline}
+.sum .due .num{font-size:1.9rem;font-weight:600}
+.change{border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;font-weight:600}
+.change.ok{background:var(--ok-soft);color:var(--ok)}
+.change.rest{background:var(--warn-soft);color:var(--warn)}
+.err{background:var(--danger-soft);color:var(--danger);border-radius:8px;padding:10px 12px;font-weight:500}
+.note{background:var(--sunk);border:1px dashed var(--line);border-radius:8px;padding:10px 12px;font-size:.85rem;color:var(--muted)}
+.rx{border-left:3px solid var(--danger);background:var(--danger-soft);border-radius:0 8px 8px 0;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.rx h3{color:var(--danger)}
+.rx .in{background:var(--surface)}
+.cnam{border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 8px 8px 0;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.cnam .in{background:var(--surface)}
+.kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;color:var(--muted);background:var(--sunk)}
+
+/* Bandeaux registre */
+.banner{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-radius:10px;padding:12px 16px;font-weight:500}
+.banner.ok{background:var(--ok-soft);color:var(--ok)}
+.banner.bad{background:var(--danger-soft);color:var(--danger)}
+
+/* Ticket modal */
+.overlay{position:fixed;inset:0;background:rgb(6 14 11 / .55);z-index:50;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding-block:calc(24px + env(safe-area-inset-top,0px)) 24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.modal{display:flex;flex-direction:column;gap:12px;align-items:stretch;width:min(100%,360px)}
+.paper{background:#fffef9;color:#1a1a1a;font:12.5px/1.45 var(--f-mono);font-variant-numeric:tabular-nums;padding:18px 16px 22px;box-shadow:0 12px 40px rgb(0 0 0 / .3);border-radius:2px}
+.paper .c{text-align:center}
+.paper .l{display:flex;justify-content:space-between;gap:10px}
+.paper hr{border:0;border-top:1px dashed #888;margin:8px 0}
+.paper .big{font-weight:600;font-size:14px}
+.paper .i{padding-left:10px;color:#555}
+.modal .acts{display:flex;gap:8px}
+.modal .acts .btn{flex:1}
+
+.denoms{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.denoms label{display:flex;flex-direction:column;gap:3px;font:.8rem var(--f-mono);color:var(--muted)}
+.lock{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .rail{min-width:0}
+  .rail{border-right:0;border-bottom:1px solid var(--line);padding:10px max(12px,env(safe-area-inset-right,0px)) 10px max(12px,env(safe-area-inset-left,0px));gap:10px}
+  .brand{display:none}
+  .nav{flex-direction:row;overflow-x:auto;gap:4px}
+  .nav a{white-space:nowrap;padding:7px 10px}
+  .nav .k{display:none}
+  .who{margin-top:0;flex-direction:row;align-items:center}
+  .who span{white-space:nowrap}
+  .grid2{grid-template-columns:1fr}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="demo-band">
+  <span><b>DÉMO</b> · données fictives, tout reste dans votre navigateur et disparaît au rechargement.</span>
+  <a href="https://github.com/Marwen23792/pharmacare" target="_blank" rel="noopener">Code source sur GitHub</a>
+</div>
+<div class="app">
+  <aside class="rail">
+    <div class="brand">
+      <svg class="cross" viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="7" fill="var(--accent)"/><path d="M12 6h6v6h6v6h-6v6h-6v-6H6v-6h6z" fill="var(--on-accent)"/></svg>
+      <strong>PharmaCare</strong>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="who">
+      <span>Connecté :</span>
+      <select id="user" aria-label="Utilisateur connecté">
+        <option value="pharm">Dr Sami Ben Ali · titulaire</option>
+        <option value="caisse">Amine Trabelsi · caissier</option>
+      </select>
+    </div>
+  </aside>
+  <main><div class="wrap" id="view"></div></main>
+</div>
+<div class="overlay" id="overlay" hidden></div>
+
+<script>
+"use strict";
+document.documentElement.lang = "fr";
+/* ---------- utilitaires ---------- */
+const NOW = new Date();
+const pad = n => String(n).padStart(2, "0");
+const ym = (d) => d.getFullYear() + "-" + pad(d.getMonth() + 1);
+const addMonths = n => { const d = new Date(NOW.getFullYear(), NOW.getMonth() + n, 1); return ym(d); };
+const daysAgo = n => new Date(NOW.getTime() - n * 864e5);
+const endOfMonth = s => { const [y, m] = s.split("-").map(Number); return new Date(y, m, 0, 23, 59, 59); };
+const monthsLeft = s => (endOfMonth(s) - NOW) / (30.4 * 864e5);
+const fdate = d => pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + "/" + d.getFullYear();
+const ftime = d => pad(d.getHours()) + ":" + pad(d.getMinutes());
+const fexp = s => s.slice(5) + "/" + s.slice(0, 4);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const norm = s => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+/* montants en millimes (le dinar a 3 décimales) */
+function fmt(m) {
+  const neg = m < 0; m = Math.abs(Math.round(m));
+  const d = Math.floor(m / 1000), r = String(m % 1000).padStart(3, "0");
+  return (neg ? "−" : "") + String(d).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + "," + r;
+}
+function parseDT(s) {
+  s = String(s ?? "").trim().replace(/\s/g, "").replace(",", ".");
+  if (!s) return 0;
+  const n = Number(s);
+  return isFinite(n) && n >= 0 ? Math.round(n * 1000) : NaN;
+}
+function hash(str) { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, "0"); }
+function vatBreak(lines) {
+  const by = {};
+  for (const l of lines) by[l.vat] = (by[l.vat] || 0) + l.ttc;
+  return Object.keys(by).map(Number).sort((a, b) => a - b).map(rate => {
+    const ttc = by[rate], ht = Math.round(ttc * 100 / (100 + rate));
+    return { rate, ttc, ht, tva: ttc - ht };
+  });
+}
+
+/* ---------- données de démonstration ---------- */
+const P = (id, code, name, dci, price, vat, table, remb, min, lots) => ({ id, code, name, dci, price, vat, table, remb, min, lots: lots.map(([no, m, qty]) => ({ no, exp: addMonths(m), qty })) });
+const S = {
+  user: "pharm",
+  users: {
+    pharm: { name: "Dr Sami Ben Ali", role: "Pharmacien titulaire", pharmacist: true },
+    caisse: { name: "Amine Trabelsi", role: "Caissier", pharmacist: false },
+  },
+  products: [
+    P("p1", "6191234500011", "Doliprane 1000 mg cp B/8", "paracétamol", 2350, 7, null, true, 30, [["L2402C", 1, 6], ["L2411A", 22, 64]]),
+    P("p2", "6191234500028", "Paralgan 1 g cp B/8", "paracétamol", 1900, 7, null, true, 20, [["PG0925", 14, 40]]),
+    P("p3", "6191234500035", "Augmentin 1 g/125 mg sachets B/12", "amoxicilline + ac. clavulanique", 12800, 7, null, true, 10, [["AU7731", -1, 3], ["AU8102", 9, 18]]),
+    P("p4", "6191234500042", "Glucophage 850 mg cp B/30", "metformine", 4650, 7, null, true, 15, [["GL5521", 16, 42]]),
+    P("p5", "6191234500059", "Amlor 5 mg gél B/30", "amlodipine", 9200, 7, null, true, 10, [["AM3310", 2, 4], ["AM3402", 19, 20]]),
+    P("p6", "6191234500066", "Tramal 50 mg gél B/20", "tramadol", 6100, 7, "A", true, 5, [["TR1188", 11, 14]]),
+    P("p7", "6191234500073", "Skenan LP 30 mg gél B/14", "morphine (sulfate)", 18900, 7, "B", true, 2, [["SK0447", 8, 6]]),
+    P("p8", "6191234500080", "Bromazépam 6 mg cp B/30", "bromazépam", 3450, 7, "C", true, 5, [["BZ2290", 13, 25]]),
+    P("p9", "6191234500097", "Ventoline 100 µg aérosol", "salbutamol", 5780, 7, null, true, 6, [["VT6612", 7, 2]]),
+    P("p10", "3282770100495", "Avène Cicalfate+ crème 40 ml", "", 28500, 19, null, false, 4, [["CF2404", 20, 9]]),
+    P("p11", "3401345935571", "Bioderma Sensibio H2O 250 ml", "", 36900, 19, null, false, 4, [["BS1123", 26, 7]]),
+    P("p12", "6191234500127", "Sérum physiologique unidoses B/30", "chlorure de sodium", 3200, 7, null, false, 10, [["SP9001", 30, 55]]),
+  ],
+  basket: [], q: "",
+  cnam: { on: false, apci: false, regime: "Filière publique", assure: "", benef: "Assuré" },
+  rx: { presc: "", patient: "", date: "", adrP: "", adrPr: "" },
+  pay: { cash: "", card: "" },
+  error: "",
+  sales: [], ticketSeq: 1240, ordSeq: 3850, zSeq: 311, bordSeq: 41,
+  ord: [], dossiers: [], bordereaux: [],
+  session: { fond: 50000, opened: new Date(NOW.getFullYear(), NOW.getMonth(), NOW.getDate(), 8, 0), moves: [] },
+  zs: [], count: {}, stockFilter: "all", stockQ: "", ordQ: "", tampered: null, moveAmt: "", moveWhy: "", moveType: "out",
+};
+const prod = id => S.products.find(p => p.id === id);
+const usable = l => l.qty > 0 && endOfMonth(l.exp) >= NOW;
+const avail = p => p.lots.filter(usable).reduce((s, l) => s + l.qty, 0);
+const nextLot = p => p.lots.filter(usable).sort((a, b) => a.exp.localeCompare(b.exp))[0];
+function fefo(p, qty) {
+  const lots = p.lots.filter(usable).sort((a, b) => a.exp.localeCompare(b.exp));
+  let need = qty; const picks = [];
+  for (const l of lots) { if (!need) break; const t = Math.min(need, l.qty); picks.push({ lot: l, qty: t }); need -= t; }
+  if (need > 0) throw new Error(`Stock insuffisant pour ${p.name} : ${qty - need} boîte(s) disponible(s).`);
+  return picks;
+}
+function lineCalc(l) {
+  const p = prod(l.pid), gross = p.price * l.qty;
+  const disc = p.vat === 19 ? Math.round(gross * (l.disc || 0) / 100) : 0;
+  return { p, gross, disc, ttc: gross - disc };
+}
+function cnamRate(c) { return c.apci ? 100 : 70; }
+function basketTotals(basket, cnam) {
+  const calc = basket.map(lineCalc);
+  const total = calc.reduce((s, c) => s + c.ttc, 0);
+  const disc = calc.reduce((s, c) => s + c.disc, 0);
+  const rembBase = calc.filter(c => c.p.remb).reduce((s, c) => s + c.ttc, 0);
+  const partCnam = cnam.on ? Math.round(rembBase * cnamRate(cnam) / 100) : 0;
+  return { calc, total, disc, partCnam, due: total - partCnam };
+}
+
+/* registre : chaînage des empreintes */
+function ordHash(e, prev) { return hash(prev + "|" + [e.no, e.date.toISOString(), e.product, e.lot, e.qty, e.presc, e.patient, e.pharm].join("|")); }
+function ordIntact() {
+  let prev = "0";
+  for (const e of S.ord) { if (ordHash(e, prev) !== e.h) return e.no; prev = e.h; }
+  return null;
+}
+
+/* ---------- vente (mêmes règles que pc_complete_sale) ---------- */
+function completeSale(o) {
+  const user = S.users[o.user];
+  if (!o.basket.length) throw new Error("Le panier est vide.");
+  const t = basketTotals(o.basket, o.cnam);
+  const ctrl = t.calc.filter(c => c.p.table);
+  if (ctrl.length) {
+    if (!user.pharmacist) throw new Error("Délivrance réservée au pharmacien : un produit des tableaux A, B ou C est dans le panier.");
+    if (!o.rx.presc.trim() || !o.rx.patient.trim() || !o.rx.date) throw new Error("Ordonnance obligatoire : prescripteur, patient et date.");
+    if (new Date(o.rx.date) > NOW) throw new Error("La date de l'ordonnance ne peut pas être dans le futur.");
+    if (ctrl.some(c => c.p.table === "B") && (!o.rx.adrP.trim() || !o.rx.adrPr.trim())) throw new Error("Tableau B : adresses du patient et du prescripteur obligatoires.");
+  }
+  if (o.cnam.on && !o.cnam.assure.trim()) throw new Error("CNAM : saisir le n° d'assuré.");
+  const card = parseDT(o.pay.card), cash = parseDT(o.pay.cash);
+  if (isNaN(card) || isNaN(cash)) throw new Error("Montant de règlement invalide.");
+  if (card > t.due) throw new Error("Le montant carte dépasse le montant à payer.");
+  if (card + cash < t.due) throw new Error(`Reste à payer : ${fmt(t.due - card - cash)} DT.`);
+  // prélèvement FEFO : tout est vérifié avant de toucher au stock
+  const picks = t.calc.map(c => fefo(c.p, o.basket.find(b => b.pid === c.p.id).qty));
+  picks.forEach(ps => ps.forEach(pk => { pk.lot.qty -= pk.qty; }));
+  const at = o.at || new Date();
+  const no = "T" + at.getFullYear() + "-" + String(++S.ticketSeq).padStart(6, "0");
+  const lines = t.calc.map((c, i) => ({ name: c.p.name, table: c.p.table, vat: c.p.vat, qty: o.basket[i].qty, price: c.p.price, disc: c.disc, ttc: c.ttc, remb: c.p.remb, lots: picks[i].map(pk => ({ no: pk.lot.no, exp: pk.lot.exp, qty: pk.qty })) }));
+  const change = card + cash - t.due;
+  const sale = { no, at, user: user.name, lines, total: t.total, disc: t.disc, partCnam: t.partCnam, due: t.due, card, cash, change, cashNet: cash - change,
+    cnam: o.cnam.on ? { ...o.cnam, rate: cnamRate(o.cnam) } : null, rx: ctrl.length ? { ...o.rx } : null, vat: vatBreak(lines) };
+  S.sales.push(sale);
+  // ordonnancier : transcription automatique, une ligne par lot
+  lines.forEach(l => { if (!l.table) return; l.lots.forEach(lt => {
+    const prev = S.ord.length ? S.ord[S.ord.length - 1].h : "0";
+    const e = { no: ++S.ordSeq, date: at, product: l.name, table: l.table, lot: lt.no, qty: lt.qty, presc: o.rx.presc.trim(), patient: o.rx.patient.trim(), pharm: user.name, ticket: no };
+    e.h = ordHash(e, prev); S.ord.push(e);
+  }); });
+  if (sale.cnam) S.dossiers.push({ id: "D-" + no.slice(1), at, assure: o.cnam.assure.trim(), benef: o.cnam.benef, regime: o.cnam.regime, apci: o.cnam.apci, amount: t.partCnam, status: "attente", bord: null, ticket: no });
+  return sale;
+}
+
+/* ---------- jeu d'essai ---------- */
+(function seed() {
+  const base = { user: "pharm", cnam: { on: false, apci: false, regime: "Filière publique", assure: "", benef: "Assuré" }, rx: { presc: "", patient: "", date: "", adrP: "", adrPr: "" } };
+  const today = h => new Date(NOW.getFullYear(), NOW.getMonth(), NOW.getDate(), h, 10 + h);
+  // ordonnancier : quelques transcriptions des jours précédents
+  [[9, "Tramal 50 mg gél B/20", "A", "TR1188", 1, "Dr Leïla Gharbi", "Hédi M."], [6, "Bromazépam 6 mg cp B/30", "C", "BZ2290", 1, "Dr Karim Jaziri", "Sonia K."], [2, "Skenan LP 30 mg gél B/14", "B", "SK0447", 2, "Dr Nabil Haddad", "Mohamed R."]].forEach(([d, product, table, lot, qty, presc, patient]) => {
+    const prev = S.ord.length ? S.ord[S.ord.length - 1].h : "0";
+    const e = { no: ++S.ordSeq, date: daysAgo(d), product, table, lot, qty, presc, patient, pharm: "Dr Sami Ben Ali", ticket: "—" };
+    e.h = ordHash(e, prev); S.ord.push(e);
+  });
+  // dossiers CNAM des semaines précédentes
+  const old = [[4, 9840, "attente"], [11, 22310, "attente"], [19, 6440, "attente"], [33, 41250, "depose"], [41, 15780, "depose"], [58, 8120, "depose"], [74, 27600, "depose"], [97, 12030, "depose"], [126, 5390, "depose"], [70, 33100, "paye"]];
+  const names = ["123456-78", "204517-11", "887102-03", "330981-45", "412290-07", "559013-62", "671120-88", "702245-19", "815533-40", "990112-26"];
+  S.bordereaux.push({ no: "B" + NOW.getFullYear() + "-0" + (S.bordSeq - 2), from: daysAgo(80), to: daysAgo(60), status: "paye", count: 1 });
+  S.bordereaux.push({ no: "B" + NOW.getFullYear() + "-0" + (S.bordSeq - 1), from: daysAgo(130), to: daysAgo(30), status: "depose", count: 6 });
+  old.forEach(([d, amount, st], i) => S.dossiers.push({ id: "D-" + (2026000 + i), at: daysAgo(d), assure: names[i], benef: i % 3 ? "Assuré" : "Conjoint", regime: i % 2 ? "Filière privée" : "Filière publique", apci: i % 4 === 0, amount,
+    status: st, bord: st === "attente" ? null : st === "paye" ? S.bordereaux[0].no : S.bordereaux[1].no, ticket: "—" }));
+  // trois ventes du matin
+  completeSale({ ...base, at: today(8), basket: [{ pid: "p1", qty: 2 }, { pid: "p12", qty: 1 }], pay: { cash: "10", card: "" } });
+  completeSale({ ...base, at: today(9), basket: [{ pid: "p4", qty: 3 }, { pid: "p5", qty: 1 }], cnam: { on: true, apci: true, regime: "Filière publique", assure: "445120-09", benef: "Assuré" }, pay: { cash: "", card: "" } });
+  completeSale({ ...base, at: today(10), basket: [{ pid: "p10", qty: 1, disc: 10 }], pay: { cash: "", card: "25,650" } });
+})();
+
+/* ---------- navigation ---------- */
+const VIEWS = [
+  ["accueil", "Accueil", ""], ["caisse", "Caisse", ""], ["stock", "Produits & stock", ""],
+  ["ordonnancier", "Ordonnancier", ""], ["cnam", "CNAM", ""], ["cloture", "Clôture Z", ""],
+];
+const route = () => { const h = location.hash.slice(1); return VIEWS.some(v => v[0] === h) ? h : "accueil"; };
+function render() {
+  const a = document.activeElement, id = a && a.id;
+  let sel = null; try { sel = id && a.selectionStart != null ? [a.selectionStart, a.selectionEnd] : null; } catch (e) {}
+  const r = route();
+  document.getElementById("nav").innerHTML = VIEWS.map(([k, l, key]) => `<a href="#${k}" ${k === r ? 'aria-current="page"' : ""}>${l}${key ? `<span class="k">${key}</span>` : ""}</a>`).join("");
+  document.getElementById("view").innerHTML = ({ accueil: vHome, caisse: vPos, stock: vStock, ordonnancier: vOrd, cnam: vCnam, cloture: vZ })[r]();
+  if (id) { const el = document.getElementById(id); if (el) { el.focus(); if (sel) try { el.setSelectionRange(sel[0], sel[1]); } catch (e) {} } }
+}
+const me = () => S.users[S.user];
+const tableBadge = t => t ? `<span class="badge t${t}" title="Tableau ${t}">${t}</span>` : "";
+const lockMsg = what => `<div class="panel lock"><h2>Accès réservé</h2><p class="muted">${what} est réservé au titulaire et aux pharmaciens. Le rôle « caissier » n'y a pas accès : la règle est appliquée par le serveur, pas seulement par l'écran.</p><button class="btn" data-act="as-pharm">Se connecter en tant que Dr Sami Ben Ali</button></div>`;
+
+/* ---------- Accueil ---------- */
+function sessionSales() { return S.sales.filter(s => !s.z); }
+function vHome() {
+  const ss = sessionSales(), ca = ss.reduce((s, x) => s + x.total, 0);
+  const owed = S.dossiers.filter(d => d.status !== "paye").reduce((s, d) => s + d.amount, 0);
+  const soon = [], blocked = [], low = [];
+  S.products.forEach(p => {
+    p.lots.forEach(l => { if (!l.qty) return; if (!usable(l)) blocked.push([p, l]); else if (monthsLeft(l.exp) < 3) soon.push([p, l]); });
+    if (avail(p) < p.min) low.push(p);
+  });
+  const li = (t, body) => `<li style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 12px;padding:8px 0;border-bottom:1px solid var(--line)">${t}${body}</li>`;
+  return `<div class="head"><div><h1>Bonjour, ${esc(me().name.split(" ").slice(0, 2).join(" "))}</h1><p>${fdate(NOW)} · Pharmacie de démonstration, Tunis</p></div>
+    <a class="btn primary" href="#caisse">Ouvrir la caisse</a></div>
+  <div class="tiles">
+    <div class="tile"><span class="lbl">CA du jour TTC</span><span class="val">${fmt(ca)}</span><span class="sub">DT · session en cours</span></div>
+    <div class="tile"><span class="lbl">Ventes</span><span class="val">${ss.length}</span><span class="sub">panier moyen ${fmt(ss.length ? Math.round(ca / ss.length) : 0)} DT</span></div>
+    <div class="tile"><span class="lbl">Créances CNAM</span><span class="val">${fmt(owed)}</span><span class="sub">DT · ${S.dossiers.filter(d => d.status !== "paye").length} dossiers ouverts</span></div>
+    <div class="tile"><span class="lbl">Ordonnancier</span><span class="val">n° ${S.ordSeq}</span><span class="sub">${ordIntact() ? "registre altéré" : "registre intègre"}</span></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h2>À surveiller</h2>
+      <ul style="list-style:none;margin:0;padding:0">
+      ${blocked.map(([p, l]) => li(`<span>${esc(p.name)} <span class="lot bad">${l.no} · ${fexp(l.exp)}</span></span>`, `<span class="pill bad">Périmé · bloqué à la vente</span>`)).join("")}
+      ${soon.map(([p, l]) => li(`<span>${esc(p.name)} <span class="lot warn">${l.no} · ${fexp(l.exp)}</span></span>`, `<span class="pill warn">Périme sous 3 mois · ${l.qty} bt</span>`)).join("")}
+      ${low.map(p => li(`<span>${esc(p.name)}</span>`, `<span class="pill info">Stock ${avail(p)} / mini ${p.min}</span>`)).join("")}
+      </ul>
+      <p class="small muted" style="margin:12px 0 0">Les lots qui périment en premier partent en premier (FEFO). Un lot périmé ne peut jamais être vendu.</p>
+    </div>
+    <div class="panel"><h2>Essayer la démo</h2>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn" data-act="scenario" data-s="simple">Vente simple avec rendu de monnaie</button>
+        <button class="btn" data-act="scenario" data-s="cnam">Assuré CNAM, maladie chronique (APCI)</button>
+        <button class="btn" data-act="scenario" data-s="tabB">Stupéfiant (tableau B) sur ordonnance</button>
+      </div>
+      <p class="small muted" style="margin:12px 0 0">Changez d'utilisateur en bas du menu pour voir les droits : un caissier ne peut ni délivrer un produit des tableaux A, B, C, ni clôturer la caisse.</p>
+    </div>
+  </div>
+  <div class="note">Cette page est une maquette interactive. Dans l'application réelle, ces règles sont appliquées par la base de données PostgreSQL : historique non modifiable, numérotation sans trou des tickets et du registre, stock jamais négatif, ventes enregistrées une seule fois même en cas de coupure.</div>`;
+}
+
+/* ---------- Caisse ---------- */
+function searchResults() {
+  const q = norm(S.q.trim()); if (!q) return [];
+  return S.products.filter(p => norm(p.name + " " + p.dci + " " + p.code).includes(q)).slice(0, 7);
+}
+function cheaperGeneric(p) { if (!p.dci) return null; return S.products.find(o => o.id !== p.id && o.dci === p.dci && o.price < p.price && avail(o) > 0); }
+function vPos() {
+  const t = basketTotals(S.basket, S.cnam), res = searchResults();
+  const ctrl = t.calc.filter(c => c.p.table), hasB = ctrl.some(c => c.p.table === "B");
+  const card = parseDT(S.pay.card), cash = parseDT(S.pay.cash);
+  const rest = t.due - (isNaN(card) ? 0 : card) - (isNaN(cash) ? 0 : cash);
+  const canPay = S.basket.length && !isNaN(card) && !isNaN(cash) && rest <= 0 && card <= t.due;
+  return `<div class="head"><div><h1>Caisse 1</h1><p>Session ouverte à ${ftime(S.session.opened)} · fond de caisse ${fmt(S.session.fond)} DT · ${esc(me().name)}</p></div>
+    <div class="row small muted"><span><span class="kbd">Échap</span> recherche</span><span><span class="kbd">F8</span> montant exact</span><span><span class="kbd">F12</span> encaisser</span></div></div>
+  <div class="row"><span class="small muted">Scénarios :</span>
+    <button class="chip" data-act="scenario" data-s="simple">Vente simple</button>
+    <button class="chip" data-act="scenario" data-s="cnam">CNAM APCI</button>
+    <button class="chip" data-act="scenario" data-s="tabB">Tableau B</button>
+    <button class="chip" data-act="scenario" data-s="para">Parapharmacie + remise</button></div>
+  <div class="grid2">
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+      <div class="search">
+        <input id="q" class="in" autocomplete="off" placeholder="Scanner ou taper un nom, une DCI, un code…" value="${esc(S.q)}" aria-label="Recherche produit">
+        ${res.length ? `<div class="results">${res.map((p, i) => { const g = cheaperGeneric(p), a = avail(p); return `<div class="res ${i ? "" : "first"}" data-act="add" data-id="${p.id}">
+          <div><div>${esc(p.name)}${tableBadge(p.table)}${p.vat === 19 ? '<span class="badge para">PARA</span>' : ""}</div><div class="small muted">${esc(p.dci || "parapharmacie")} · stock ${a}</div>${g ? `<div class="gen">Générique moins cher : ${esc(g.name)} · ${fmt(g.price)}</div>` : ""}</div>
+          <div class="num">${fmt(p.price)}</div></div>`; }).join("")}</div>` : S.q.trim() ? `<div class="results"><div class="empty">Aucun produit pour « ${esc(S.q)} »</div></div>` : ""}
+      </div>
+      <div class="panel" style="padding:0">
+        ${S.basket.length ? `<div class="tbl-wrap"><table><thead><tr><th>Produit</th><th>Qté</th><th class="r">PU</th><th>Remise</th><th class="r">Total</th><th></th></tr></thead><tbody>
+        ${t.calc.map((c, i) => { const b = S.basket[i], nl = nextLot(c.p); return `<tr>
+          <td><div>${esc(c.p.name)}${tableBadge(c.p.table)}</div><div class="small muted">${nl ? `lot ${nl.no} · exp ${fexp(nl.exp)}` : "rupture"}${c.p.remb ? " · remboursable" : ""}</div></td>
+          <td><span class="qty"><button data-act="qty" data-i="${i}" data-d="-1" aria-label="Moins">−</button><span>${b.qty}</span><button data-act="qty" data-i="${i}" data-d="1" aria-label="Plus">+</button></span></td>
+          <td class="r num">${fmt(c.p.price)}</td>
+          <td>${c.p.vat === 19 ? `<select class="in" id="disc${i}" data-act="disc" data-i="${i}" style="width:auto;padding:4px 6px">${[0, 5, 10, 15].map(v => `<option value="${v}" ${v === (b.disc || 0) ? "selected" : ""}>${v} %</option>`).join("")}</select>` : `<span class="small muted" title="Prix officiel : pas de remise">prix officiel</span>`}</td>
+          <td class="r num">${fmt(c.ttc)}</td>
+          <td><button class="btn sm danger" data-act="del" data-i="${i}" aria-label="Retirer">×</button></td></tr>`; }).join("")}
+        </tbody></table></div>` : `<div class="empty">Panier vide. Scannez un produit ou choisissez un scénario ci-dessus.</div>`}
+      </div>
+      <div class="cnam">
+        <label class="check"><input type="checkbox" id="cnamOn" data-act="cnamOn" ${S.cnam.on ? "checked" : ""}> Assuré CNAM (tiers payant)</label>
+        ${S.cnam.on ? `<div class="row">
+          <label class="f">Régime<select class="in" id="cRegime" data-bind="cnam.regime">${["Filière publique", "Filière privée", "Remboursement"].map(v => `<option ${v === S.cnam.regime ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+          <label class="f">N° d'assuré<input class="in" id="cAssure" data-bind="cnam.assure" value="${esc(S.cnam.assure)}" placeholder="ex. 123456-78"></label>
+          <label class="f">Bénéficiaire<select class="in" id="cBenef" data-bind="cnam.benef">${["Assuré", "Conjoint", "Enfant", "Ascendant"].map(v => `<option ${v === S.cnam.benef ? "selected" : ""}>${v}</option>`).join("")}</select></label></div>
+          <label class="check"><input type="checkbox" id="cApci" data-act="apci" ${S.cnam.apci ? "checked" : ""}> Maladie chronique (APCI) · prise en charge ${S.cnam.apci ? 100 : 70} % des produits remboursables</label>
+          <span class="small muted">Taux de démonstration, à confirmer avec la convention CNAM en vigueur.</span>` : ""}
+      </div>
+      ${ctrl.length ? `<div class="rx"><h3>Ordonnance obligatoire · tableau ${[...new Set(ctrl.map(c => c.p.table))].join(", ")}</h3>
+        ${me().pharmacist ? "" : `<div class="err">Vous êtes connecté en caissier : seul un pharmacien peut délivrer ce produit.</div>`}
+        <div class="row">
+          <label class="f">Prescripteur<input class="in" id="rxPresc" data-bind="rx.presc" value="${esc(S.rx.presc)}" placeholder="Dr …"></label>
+          <label class="f">Patient<input class="in" id="rxPat" data-bind="rx.patient" value="${esc(S.rx.patient)}"></label>
+          <label class="f">Date de l'ordonnance<input class="in" type="date" id="rxDate" data-bind="rx.date" value="${esc(S.rx.date)}"></label></div>
+        ${hasB ? `<div class="row">
+          <label class="f">Adresse du patient<input class="in" id="rxAdrP" data-bind="rx.adrP" value="${esc(S.rx.adrP)}"></label>
+          <label class="f">Adresse du prescripteur<input class="in" id="rxAdrPr" data-bind="rx.adrPr" value="${esc(S.rx.adrPr)}"></label></div>` : ""}
+        <span class="small muted">Transcrit automatiquement à l'ordonnancier au moment de l'encaissement.</span></div>` : ""}
+    </div>
+    <div class="panel sum" style="position:sticky;top:12px">
+      <h2>Règlement</h2>
+      <div class="l"><span>Total TTC</span><span class="num">${fmt(t.total)}</span></div>
+      ${t.disc ? `<div class="l muted"><span>dont remises</span><span class="num">${fmt(-t.disc)}</span></div>` : ""}
+      ${S.cnam.on ? `<div class="l" style="color:var(--accent)"><span>Part CNAM (${cnamRate(S.cnam)} %)</span><span class="num">${fmt(-t.partCnam)}</span></div>` : ""}
+      <div class="l due"><span>${S.cnam.on ? "Part assuré" : "À payer"}</span><span class="num">${fmt(t.due)}</span></div>
+      <div class="row" style="margin-top:6px">
+        <label class="f">Carte (DT)<input class="in amt" id="payCard" inputmode="decimal" data-bind="pay.card" value="${esc(S.pay.card)}" placeholder="0,000"></label>
+        <label class="f">Espèces reçues (DT)<input class="in amt" id="payCash" inputmode="decimal" data-bind="pay.cash" value="${esc(S.pay.cash)}" placeholder="0,000"></label>
+      </div>
+      <div class="row">${[5, 10, 20, 50].map(v => `<button class="chip" data-act="cash" data-v="${v}">${v} DT</button>`).join("")}<button class="chip" data-act="exact">Montant exact</button></div>
+      ${S.basket.length ? (rest > 0 ? `<div class="change rest"><span>Reste à payer</span><span class="num">${fmt(rest)}</span></div>` : `<div class="change ok"><span>Rendu monnaie</span><span class="num">${fmt(-rest)}</span></div>`) : ""}
+      ${S.error ? `<div class="err" role="alert">${esc(S.error)}</div>` : ""}
+      <button class="btn primary big" data-act="pay" ${canPay ? "" : "disabled"}>Encaisser ${S.basket.length ? fmt(t.due) + " DT" : ""}</button>
+      ${S.basket.length ? `<div class="small muted">TVA incluse : ${vatBreak(t.calc.map(c => ({ vat: c.p.vat, ttc: c.ttc }))).map(v => `${v.rate} % → ${fmt(v.tva)}`).join(" · ")}</div>` : ""}
+    </div>
+  </div>`;
+}
+function scenario(s) {
+  S.basket = []; S.error = ""; S.q = ""; S.pay = { cash: "", card: "" };
+  S.cnam = { on: false, apci: false, regime: "Filière publique", assure: "", benef: "Assuré" };
+  S.rx = { presc: "", patient: "", date: "", adrP: "", adrPr: "" };
+  const d = new Date(NOW.getTime() - 864e5), iso = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  if (s === "simple") { S.basket = [{ pid: "p1", qty: 2 }, { pid: "p9", qty: 1 }]; S.pay.cash = "20"; }
+  if (s === "cnam") { S.basket = [{ pid: "p4", qty: 3 }, { pid: "p5", qty: 1 }, { pid: "p12", qty: 1 }]; S.cnam = { on: true, apci: true, regime: "Filière publique", assure: "330981-45", benef: "Assuré" }; }
+  if (s === "tabB") { S.basket = [{ pid: "p7", qty: 1 }]; S.rx = { presc: "Dr Nabil Haddad", patient: "Mohamed R.", date: iso, adrP: "", adrPr: "" }; }
+  if (s === "para") { S.basket = [{ pid: "p11", qty: 1, disc: 10 }, { pid: "p10", qty: 1, disc: 0 }]; }
+  location.hash = "caisse"; render();
+}
+function addToBasket(id) {
+  const p = prod(id), i = S.basket.findIndex(b => b.pid === id);
+  if (i >= 0) S.basket[i].qty++; else S.basket.push({ pid: id, qty: 1, disc: 0 });
+  S.q = ""; S.error = avail(p) < (S.basket.find(b => b.pid === id).qty) ? `Stock insuffisant pour ${p.name} : ${avail(p)} disponible(s).` : "";
+}
+function pay() {
+  try {
+    const sale = completeSale({ user: S.user, basket: S.basket, cnam: S.cnam, rx: S.rx, pay: S.pay });
+    S.basket = []; S.pay = { cash: "", card: "" }; S.error = "";
+    S.cnam = { on: false, apci: false, regime: "Filière publique", assure: "", benef: "Assuré" };
+    S.rx = { presc: "", patient: "", date: "", adrP: "", adrPr: "" };
+    render(); showTicket(sale);
+  } catch (e) { S.error = e.message; render(); }
+}
+function showTicket(s) {
+  const L = (a, b, cls = "") => `<div class="l ${cls}"><span>${a}</span><span>${b}</span></div>`;
+  const o = document.getElementById("overlay");
+  o.innerHTML = `<div class="modal" role="dialog" aria-label="Ticket ${s.no}"><div class="paper">
+    <div class="c big">PHARMACIE DE DÉMONSTRATION</div>
+    <div class="c">12 avenue Habib Bourguiba, Tunis</div><div class="c">MF : 0000000/X/A/M/000 (fictif)</div><hr>
+    ${L("Ticket " + s.no, "")}${L(fdate(s.at) + " " + ftime(s.at), esc(s.user))}<hr>
+    ${s.lines.map(l => `<div>${esc(l.name)}${l.table ? " [" + l.table + "]" : ""}</div>${L(`<span class="i">${l.qty} × ${fmt(l.price)}</span>`, fmt(l.qty * l.price))}
+      ${l.disc ? L('<span class="i">remise</span>', fmt(-l.disc)) : ""}${l.lots.map(lt => `<div class="i">lot ${lt.no} · exp ${fexp(lt.exp)}${l.lots.length > 1 ? " · " + lt.qty : ""}</div>`).join("")}`).join("")}<hr>
+    ${L("TOTAL TTC", fmt(s.total), "big")}
+    ${s.cnam ? L(`Part CNAM (${s.cnam.rate} %)`, fmt(-s.partCnam)) + L("PART ASSURÉ", fmt(s.due), "big") : ""}
+    ${s.card ? L("Carte", fmt(s.card)) : ""}${s.cash ? L("Espèces", fmt(s.cash)) : ""}${s.change ? L("Rendu", fmt(s.change)) : ""}<hr>
+    ${L("TVA", "Base HT · Montant")}${s.vat.map(v => L(v.rate + " %", fmt(v.ht) + " · " + fmt(v.tva))).join("")}
+    ${s.cnam ? `<hr><div>CNAM ${esc(s.cnam.regime)} · n° ${esc(s.cnam.assure)} · ${esc(s.cnam.benef)}${s.cnam.apci ? " · APCI" : ""}</div>` : ""}
+    ${s.rx ? `<hr><div>Ordonnance du ${esc(s.rx.date.split("-").reverse().join("/"))}</div><div>${esc(s.rx.presc)} · patient ${esc(s.rx.patient)}</div>` : ""}
+    <hr><div class="c">Merci de votre visite</div></div>
+    <div class="acts"><button class="btn primary" data-act="close">Nouvelle vente</button>${s.rx ? `<a class="btn" href="#ordonnancier" data-act="close">Voir l'ordonnancier</a>` : ""}</div>
+    <div class="small" style="color:#fff;opacity:.85;text-align:center">Dans l'application, le ticket s'imprime au format 80 mm.</div></div>`;
+  o.hidden = false; o.querySelector(".btn").focus();
+}
+
+/* ---------- Stock ---------- */
+function vStock() {
+  const q = norm(S.stockQ), f = S.stockFilter;
+  const rows = S.products.filter(p => (!q || norm(p.name + " " + p.dci + " " + p.code).includes(q)) &&
+    (f === "all" || (f === "exp" && p.lots.some(l => l.qty && monthsLeft(l.exp) < 3)) || (f === "low" && avail(p) < p.min) || (f === "ctrl" && p.table)));
+  const val = S.products.reduce((s, p) => s + avail(p) * Math.round(p.price * 0.7), 0);
+  return `<div class="head"><div><h1>Produits & stock</h1><p>${S.products.length} produits · valeur estimée au prix d'achat ${fmt(val)} DT</p></div></div>
+  <div class="row"><input class="in" id="stockQ" data-bind="stockQ" value="${esc(S.stockQ)}" placeholder="Filtrer : nom, DCI, code-barres" style="max-width:340px">
+    ${[["all", "Tous"], ["exp", "Péremption < 3 mois"], ["low", "Sous le minimum"], ["ctrl", "Tableaux A, B, C"]].map(([k, l]) => `<button class="chip" data-act="sf" data-f="${k}" aria-pressed="${f === k}">${l}</button>`).join("")}</div>
+  <div class="panel" style="padding:0"><div class="tbl-wrap"><table>
+    <thead><tr><th>Produit</th><th>DCI</th><th class="r">Prix TTC</th><th>TVA</th><th>Lots (FEFO)</th><th class="r">Stock</th><th>État</th></tr></thead><tbody>
+    ${rows.map(p => { const a = avail(p); const lots = [...p.lots].sort((x, y) => x.exp.localeCompare(y.exp));
+      return `<tr><td><div>${esc(p.name)}${tableBadge(p.table)}</div><div class="small muted mono">${p.code}</div></td><td class="small">${esc(p.dci || "—")}</td>
+      <td class="r num">${fmt(p.price)}</td><td class="num">${p.vat} %</td>
+      <td>${lots.map(l => `<span class="lot ${!usable(l) && l.qty ? "bad" : monthsLeft(l.exp) < 3 && l.qty ? "warn" : ""}">${l.no} · ${fexp(l.exp)} · ${l.qty}</span>`).join("")}</td>
+      <td class="r num">${a}<span class="muted"> / ${p.min}</span></td>
+      <td>${a === 0 ? '<span class="pill bad">Rupture</span>' : a < p.min ? '<span class="pill warn">À commander</span>' : '<span class="pill ok">OK</span>'}</td></tr>`; }).join("") || `<tr><td colspan="7" class="empty">Aucun produit.</td></tr>`}
+    </tbody></table></div></div>
+  <div class="note">La quantité d'un lot ne change que par un mouvement de stock enregistré (réception, vente, retour, inventaire, échange) et ne peut jamais devenir négative. Les prix de vente sont l'historique des prix officiels, jamais écrasé.</div>`;
+}
+
+/* ---------- Ordonnancier ---------- */
+function vOrd() {
+  if (!me().pharmacist) return `<div class="head"><h1>Ordonnancier</h1></div>` + lockMsg("L'ordonnancier");
+  const bad = ordIntact(), q = norm(S.ordQ);
+  const rows = S.ord.filter(e => !q || norm(e.product + " " + e.patient + " " + e.presc).includes(q)).slice().reverse();
+  return `<div class="head"><div><h1>Ordonnancier</h1><p>Registre des délivrances des tableaux A, B et C · conservation 10 ans</p></div></div>
+  <div class="banner ${bad ? "bad" : "ok"}"><span>${bad ? `Registre altéré : l'entrée n° ${bad} ne correspond plus à son empreinte. Une modification hors du logiciel a été détectée.` : `Registre intègre · ${S.ord.length} entrées, chaque ligne est scellée par l'empreinte de la précédente.`}</span>
+    ${bad ? `<button class="btn sm" data-act="untamper">Annuler la falsification</button>` : `<button class="btn sm" data-act="tamper" title="Modifie une ligne en mémoire, comme le ferait quelqu'un qui édite la base directement">Simuler une falsification</button>`}</div>
+  <input class="in" id="ordQ" data-bind="ordQ" value="${esc(S.ordQ)}" placeholder="Rechercher un patient, un produit, un prescripteur" style="max-width:380px">
+  <div class="panel" style="padding:0"><div class="tbl-wrap"><table>
+    <thead><tr><th>N° d'ordre</th><th>Date</th><th>Produit</th><th>Lot</th><th class="r">Qté</th><th>Prescripteur</th><th>Patient</th><th>Pharmacien</th><th>Empreinte</th></tr></thead><tbody>
+    ${rows.map(e => `<tr><td class="num">${e.no}</td><td class="num">${fdate(e.date)} ${ftime(e.date)}</td><td>${esc(e.product)}${tableBadge(e.table)}</td><td class="mono small">${e.lot}</td><td class="r num">${e.qty}</td><td>${esc(e.presc)}</td><td>${esc(e.patient)}</td><td class="small">${esc(e.pharm)}</td><td class="mono small ${bad === e.no ? "" : "muted"}" style="${bad === e.no ? "color:var(--danger)" : ""}">${e.h}</td></tr>`).join("") || `<tr><td colspan="9" class="empty">Aucune entrée.</td></tr>`}
+    </tbody></table></div></div>
+  <div class="note">Les lignes ne peuvent être ni modifiées ni supprimées : un retour crée une ligne négative qui renvoie au numéro d'origine. Les numéros se suivent sans trou.</div>`;
+}
+
+/* ---------- CNAM ---------- */
+function vCnam() {
+  const open = S.dossiers.filter(d => d.status !== "paye");
+  const age = d => (NOW - d.at) / 864e5;
+  const buckets = [["0 à 30 jours", 0, 30], ["31 à 60 jours", 31, 60], ["61 à 90 jours", 61, 90], ["Plus de 90 jours", 91, 1e9]].map(([l, a, b]) => { const ds = open.filter(d => age(d) >= a && age(d) < b + 1); return { l, n: ds.length, s: ds.reduce((x, d) => x + d.amount, 0), late: a > 90 }; });
+  const pending = S.dossiers.filter(d => d.status === "attente");
+  const st = { attente: ['info', "À mettre en bordereau"], bord: ['warn', "En bordereau"], depose: ['warn', "Déposé"], paye: ['ok', "Payé"] };
+  const bst = { prepare: ['info', "Préparé"], depose: ['warn', "Déposé à la CNAM"], paye: ['ok', "Payé"] };
+  return `<div class="head"><div><h1>CNAM</h1><p>Tiers payant · créances et bordereaux</p></div>
+    <button class="btn primary" data-act="bord" ${pending.length ? "" : "disabled"}>Créer un bordereau (${pending.length} dossier${pending.length > 1 ? "s" : ""})</button></div>
+  <div class="tiles">${buckets.map(b => `<div class="tile"><span class="lbl">${b.l}</span><span class="val" style="${b.late && b.n ? "color:var(--danger)" : ""}">${fmt(b.s)}</span><span class="sub">DT · ${b.n} dossier${b.n > 1 ? "s" : ""}</span></div>`).join("")}</div>
+  <div class="panel"><h2>Bordereaux</h2><div class="tbl-wrap"><table><thead><tr><th>N°</th><th>Période</th><th class="r">Dossiers</th><th class="r">Montant</th><th>Statut</th><th></th></tr></thead><tbody>
+    ${S.bordereaux.slice().reverse().map(b => { const ds = S.dossiers.filter(d => d.bord === b.no); return `<tr><td class="num">${b.no}</td><td class="num">${fdate(b.from)} → ${fdate(b.to)}</td><td class="r num">${ds.length}</td><td class="r num">${fmt(ds.reduce((x, d) => x + d.amount, 0))}</td>
+      <td><span class="pill ${bst[b.status][0]}">${bst[b.status][1]}</span></td>
+      <td>${b.status === "prepare" ? `<button class="btn sm" data-act="bdep" data-no="${b.no}">Marquer déposé</button>` : b.status === "depose" ? `<button class="btn sm" data-act="bpay" data-no="${b.no}">Enregistrer le paiement</button>` : ""}</td></tr>`; }).join("")}
+  </tbody></table></div></div>
+  <div class="panel"><h2>Dossiers</h2><div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Assuré</th><th>Bénéficiaire</th><th>Régime</th><th class="r">Part CNAM</th><th>Statut</th></tr></thead><tbody>
+    ${S.dossiers.slice().sort((a, b) => b.at - a.at).map(d => `<tr><td class="num">${fdate(d.at)}</td><td class="mono">${esc(d.assure)}</td><td>${esc(d.benef)}${d.apci ? ' <span class="pill info">APCI</span>' : ""}</td><td class="small">${esc(d.regime)}</td><td class="r num">${fmt(d.amount)}</td>
+      <td><span class="pill ${st[d.status][0]}">${st[d.status][1]}${d.bord && d.status !== "paye" ? " " + d.bord : ""}</span></td></tr>`).join("")}
+  </tbody></table></div></div>
+  <div class="note">Dans l'application : paiements partiels et rejets dossier par dossier avec motif, attestation de remboursement A4 quand le tiers payant est suspendu. Taux et régimes à confirmer avec la CNAM.</div>`;
+}
+
+/* ---------- Clôture ---------- */
+const DENOMS = [50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10];
+function xReport() {
+  const ss = sessionSales();
+  const lines = ss.flatMap(s => s.lines);
+  const moves = S.session.moves.reduce((x, m) => x + (m.type === "in" ? m.amt : -m.amt), 0);
+  const cash = ss.reduce((x, s) => x + s.cashNet, 0);
+  return { n: ss.length, total: ss.reduce((x, s) => x + s.total, 0), disc: ss.reduce((x, s) => x + s.disc, 0), cnam: ss.reduce((x, s) => x + s.partCnam, 0),
+    card: ss.reduce((x, s) => x + s.card, 0), cash, moves, expected: S.session.fond + cash + moves, vat: vatBreak(lines) };
+}
+function vZ() {
+  if (!me().pharmacist) return `<div class="head"><h1>Clôture Z</h1></div>` + lockMsg("La clôture de caisse");
+  const x = xReport();
+  const counted = DENOMS.reduce((s, d) => s + d * (parseInt(S.count[d], 10) || 0), 0);
+  const gap = counted - x.expected;
+  const L = (a, b, st = "") => `<tr><td style="${st}">${a}</td><td class="r num" style="${st}">${b}</td></tr>`;
+  return `<div class="head"><div><h1>Clôture de caisse</h1><p>Caisse 1 · session ouverte le ${fdate(S.session.opened)} à ${ftime(S.session.opened)}</p></div></div>
+  <div class="grid2">
+    <div class="panel"><h2>Situation de caisse (X)</h2><table><tbody>
+      ${L("Ventes", x.n)}${L("Chiffre d'affaires TTC", fmt(x.total))}${L("dont remises", fmt(-x.disc), "color:var(--muted)")}
+      ${L("Part CNAM (créance, non encaissée)", fmt(x.cnam))}${L("Carte", fmt(x.card))}${L("Espèces nettes (reçu − rendu)", fmt(x.cash))}
+      ${L("Entrées / sorties d'espèces", fmt(x.moves))}${L("Fond de caisse", fmt(S.session.fond))}
+      ${L("<b>Espèces attendues dans le tiroir</b>", "<b>" + fmt(x.expected) + "</b>")}
+    </tbody></table>
+    <h3 style="margin:18px 0 8px">TVA collectée</h3><table><thead><tr><th>Taux</th><th class="r">Base HT</th><th class="r">TVA</th><th class="r">TTC</th></tr></thead><tbody>
+      ${x.vat.map(v => `<tr><td class="num">${v.rate} %</td><td class="r num">${fmt(v.ht)}</td><td class="r num">${fmt(v.tva)}</td><td class="r num">${fmt(v.ttc)}</td></tr>`).join("") || `<tr><td colspan="4" class="muted">Aucune vente.</td></tr>`}
+    </tbody></table>
+    <h3 style="margin:18px 0 8px">Entrée / sortie d'espèces</h3>
+    <div class="row"><select class="in" id="mvType" data-bind="moveType" style="width:auto"><option value="out" ${S.moveType === "out" ? "selected" : ""}>Sortie</option><option value="in" ${S.moveType === "in" ? "selected" : ""}>Entrée</option></select>
+      <input class="in amt" id="mvAmt" data-bind="moveAmt" value="${esc(S.moveAmt)}" inputmode="decimal" placeholder="Montant" style="width:110px">
+      <input class="in" id="mvWhy" data-bind="moveWhy" value="${esc(S.moveWhy)}" placeholder="Motif (obligatoire)" style="flex:1 1 160px">
+      <button class="btn" data-act="move">Enregistrer</button></div>
+    ${S.session.moves.map(m => `<div class="small muted" style="margin-top:6px">${ftime(m.at)} · ${m.type === "in" ? "Entrée" : "Sortie"} ${fmt(m.amt)} DT · ${esc(m.why)}</div>`).join("")}
+    </div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:12px"><h2 style="margin:0">Comptage du tiroir</h2>
+      <div class="denoms">${DENOMS.map(d => `<label>${d >= 1000 ? d / 1000 + " DT" : d + " mill."}<input class="in amt" id="den${d}" inputmode="numeric" data-bind="count.${d}" value="${esc(S.count[d] || "")}" placeholder="0"></label>`).join("")}</div>
+      <div class="sum"><div class="l"><span>Compté</span><span class="num">${fmt(counted)}</span></div><div class="l"><span>Attendu</span><span class="num">${fmt(x.expected)}</span></div></div>
+      <div class="change ${gap === 0 ? "ok" : "rest"}"><span>Écart</span><span class="num">${gap > 0 ? "+" : ""}${fmt(gap)}</span></div>
+      <button class="btn" data-act="fillcount">Remplir avec le montant attendu</button>
+      <button class="btn primary big" data-act="z">Clôturer et éditer le Z n° ${S.zSeq + 1}</button>
+      <span class="small muted">Après clôture, la session ne peut plus être modifiée. Une nouvelle session s'ouvre avec un fond de 50,000 DT.</span>
+    </div>
+  </div>
+  ${S.zs.length ? `<div class="panel"><h2>Historique des clôtures</h2><div class="tbl-wrap"><table><thead><tr><th>Z</th><th>Date</th><th class="r">Ventes</th><th class="r">CA TTC</th><th class="r">Espèces attendues</th><th class="r">Écart</th></tr></thead><tbody>
+    ${S.zs.slice().reverse().map(z => `<tr><td class="num">Z ${z.no}</td><td class="num">${fdate(z.at)} ${ftime(z.at)}</td><td class="r num">${z.x.n}</td><td class="r num">${fmt(z.x.total)}</td><td class="r num">${fmt(z.x.expected)}</td><td class="r num" style="color:${z.gap ? "var(--warn)" : "var(--ok)"}">${fmt(z.gap)}</td></tr>`).join("")}
+  </tbody></table></div></div>` : ""}`;
+}
+function closeZ() {
+  const x = xReport(), counted = DENOMS.reduce((s, d) => s + d * (parseInt(S.count[d], 10) || 0), 0);
+  const z = { no: ++S.zSeq, at: new Date(), x, counted, gap: counted - x.expected };
+  S.zs.push(z); sessionSales().forEach(s => { s.z = z.no; });
+  S.session = { fond: 50000, opened: new Date(), moves: [] }; S.count = {};
+  render();
+  const L = (a, b, cls = "") => `<div class="l ${cls}"><span>${a}</span><span>${b}</span></div>`;
+  const o = document.getElementById("overlay");
+  o.innerHTML = `<div class="modal" role="dialog" aria-label="Rapport Z"><div class="paper">
+    <div class="c big">RAPPORT Z n° ${z.no}</div><div class="c">Caisse 1 · ${fdate(z.at)} ${ftime(z.at)}</div><hr>
+    ${L("Ventes", x.n)}${L("CA TTC", fmt(x.total))}${L("Remises", fmt(-x.disc))}${L("Part CNAM", fmt(x.cnam))}<hr>
+    ${L("Carte", fmt(x.card))}${L("Espèces nettes", fmt(x.cash))}${L("Mouvements", fmt(x.moves))}${L("Fond", fmt(x.expected - x.cash - x.moves))}
+    ${L("Attendu", fmt(x.expected), "big")}${L("Compté", fmt(counted))}${L("ÉCART", fmt(z.gap), "big")}<hr>
+    ${L("TVA", "HT · TVA")}${x.vat.map(v => L(v.rate + " %", fmt(v.ht) + " · " + fmt(v.tva))).join("")}<hr>
+    <div class="c">Clôturé par ${esc(me().name)}</div></div>
+    <div class="acts"><button class="btn primary" data-act="close">Fermer</button></div></div>`;
+  o.hidden = false;
+}
+
+/* ---------- événements ---------- */
+function setPath(path, v) { const k = path.split("."); let o = S; while (k.length > 1) o = o[k.shift()]; o[k[0]] = v; }
+document.addEventListener("input", e => {
+  const el = e.target;
+  if (el.id === "q") { S.q = el.value; render(); return; }
+  if (el.dataset.bind) { setPath(el.dataset.bind, el.value); if (el.dataset.bind.startsWith("pay.")) S.error = ""; render(); }
+});
+document.addEventListener("change", e => {
+  const el = e.target, a = el.dataset.act;
+  if (el.id === "user") { S.user = el.value; S.error = ""; render(); return; }
+  if (a === "disc") { S.basket[+el.dataset.i].disc = +el.value; render(); }
+  if (a === "cnamOn") { S.cnam.on = el.checked; render(); }
+  if (a === "apci") { S.cnam.apci = el.checked; render(); }
+  if (el.tagName === "SELECT" && el.dataset.bind) { setPath(el.dataset.bind, el.value); render(); }
+});
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-act]"); if (!el) return;
+  const a = el.dataset.act;
+  if (el.tagName === "INPUT" || el.tagName === "SELECT") return;
+  if (a === "add") { addToBasket(el.dataset.id); render(); document.getElementById("q")?.focus(); }
+  else if (a === "qty") { const b = S.basket[+el.dataset.i]; b.qty += +el.dataset.d; if (b.qty < 1) S.basket.splice(+el.dataset.i, 1); S.error = ""; render(); }
+  else if (a === "del") { S.basket.splice(+el.dataset.i, 1); S.error = ""; render(); }
+  else if (a === "cash") { S.pay.cash = el.dataset.v; S.error = ""; render(); }
+  else if (a === "exact") { exact(); }
+  else if (a === "pay") pay();
+  else if (a === "scenario") scenario(el.dataset.s);
+  else if (a === "close") { const o = document.getElementById("overlay"); o.hidden = true; o.innerHTML = ""; if (route() === "caisse") document.getElementById("q")?.focus(); }
+  else if (a === "as-pharm") { S.user = "pharm"; document.getElementById("user").value = "pharm"; render(); }
+  else if (a === "sf") { S.stockFilter = el.dataset.f; render(); }
+  else if (a === "tamper") { const e1 = S.ord[0]; S.tampered = { no: e1.no, qty: e1.qty }; e1.qty = e1.qty + 1; render(); }
+  else if (a === "untamper") { const e1 = S.ord.find(x => x.no === S.tampered.no); e1.qty = S.tampered.qty; S.tampered = null; render(); }
+  else if (a === "bord") {
+    const ds = S.dossiers.filter(d => d.status === "attente"); if (!ds.length) return;
+    const no = "B" + NOW.getFullYear() + "-0" + (++S.bordSeq);
+    ds.forEach(d => { d.status = "bord"; d.bord = no; });
+    S.bordereaux.push({ no, from: new Date(Math.min(...ds.map(d => d.at))), to: new Date(), status: "prepare" }); render();
+  }
+  else if (a === "bdep") { S.bordereaux.find(b => b.no === el.dataset.no).status = "depose"; S.dossiers.filter(d => d.bord === el.dataset.no).forEach(d => d.status = "depose"); render(); }
+  else if (a === "bpay") { S.bordereaux.find(b => b.no === el.dataset.no).status = "paye"; S.dossiers.filter(d => d.bord === el.dataset.no).forEach(d => d.status = "paye"); render(); }
+  else if (a === "fillcount") { let rest = xReport().expected; S.count = {}; DENOMS.forEach(d => { const n = Math.floor(rest / d); if (n > 0) { S.count[d] = String(n); rest -= n * d; } }); render(); }
+  else if (a === "move") { const amt = parseDT(S.moveAmt); if (!amt || isNaN(amt) || !S.moveWhy.trim()) return; S.session.moves.push({ type: S.moveType, amt, why: S.moveWhy.trim(), at: new Date() }); S.moveAmt = ""; S.moveWhy = ""; render(); }
+  else if (a === "z") closeZ();
+});
+function exact() { const t = basketTotals(S.basket, S.cnam), card = parseDT(S.pay.card) || 0; S.pay.cash = fmt(Math.max(0, t.due - card)).replace(/ /g, ""); S.error = ""; render(); }
+document.addEventListener("keydown", e => {
+  const ov = document.getElementById("overlay");
+  if (!ov.hidden) { if (e.key === "Escape" || e.key === "Enter") { e.preventDefault(); ov.hidden = true; ov.innerHTML = ""; document.getElementById("q")?.focus(); } return; }
+  if (route() !== "caisse") return;
+  if (e.key === "Escape") { e.preventDefault(); S.q = ""; render(); document.getElementById("q").focus(); }
+  else if (e.key === "F8") { e.preventDefault(); exact(); }
+  else if (e.key === "F12" || (e.key === "Enter" && e.ctrlKey)) { e.preventDefault(); pay(); }
+  else if (e.key === "Enter" && e.target.id === "q") { const r = searchResults(); if (r.length) { e.preventDefault(); addToBasket(r[0].id); render(); } }
+});
+window.addEventListener("hashchange", () => { S.error = ""; render(); window.scrollTo(0, 0); });
+render();
+</script>
+</body>
+</html>
