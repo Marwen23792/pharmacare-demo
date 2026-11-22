@@ -246,9 +246,9 @@ function vatBreak(lines) {
 const P = (id, code, name, dci, price, vat, table, remb, min, lots) => ({ id, code, name, dci, price, vat, table, remb, min, lots: lots.map(([no, m, qty]) => ({ no, exp: addMonths(m), qty })) });
 const S = {
   user: "pharm",
-  auth: { in: false, who: "pharm", step: "pwd", fails: {}, pwd: "", otp: "", msg: "" },
+  auth: { in: false, who: "pharm", step: "pwd", fails: {}, pwd: "officine-tunis", otp: "246810", msg: "" },
   users: {
-    pharm: { name: "Dr Sami Ben Ali", role: "Pharmacien titulaire", pharmacist: true, login: "sami", twofa: true },
+    pharm: { name: "Dr Fares Ben Salem", role: "Pharmacien titulaire", pharmacist: true, login: "fares", twofa: true },
     caisse: { name: "Amine Trabelsi", role: "Caissier", pharmacist: false, login: "amine", twofa: false },
   },
   products: [
@@ -353,7 +353,7 @@ function completeSale(o) {
   // ordonnancier : quelques transcriptions des jours précédents
   [[9, "Tramal 50 mg gél B/20", "A", "TR1188", 1, "Dr Leïla Gharbi", "Hédi M."], [6, "Bromazépam 6 mg cp B/30", "C", "BZ2290", 1, "Dr Karim Jaziri", "Sonia K."], [2, "Skenan LP 30 mg gél B/14", "B", "SK0447", 2, "Dr Nabil Haddad", "Mohamed R."]].forEach(([d, product, table, lot, qty, presc, patient]) => {
     const prev = S.ord.length ? S.ord[S.ord.length - 1].h : "0";
-    const e = { no: ++S.ordSeq, date: daysAgo(d), product, table, lot, qty, presc, patient, pharm: "Dr Sami Ben Ali", ticket: "—" };
+    const e = { no: ++S.ordSeq, date: daysAgo(d), product, table, lot, qty, presc, patient, pharm: "Dr Fares Ben Salem", ticket: "—" };
     e.h = ordHash(e, prev); S.ord.push(e);
   });
   // dossiers CNAM des semaines précédentes
@@ -391,13 +391,13 @@ function renderLogin() {
     ${locked ? `<div class="err" role="alert">Compte verrouillé après 5 essais. Dans l'application, il se débloque après 15 minutes ou par le titulaire.</div><button type="button" class="btn" data-act="unlock">Débloquer (démo)</button>`
       : A.msg ? `<div class="err" role="alert">${esc(A.msg)}</div>` : ""}
     <button class="btn primary big" type="submit" ${locked ? "disabled" : ""}>Se connecter</button>
-    <div class="hint">Démo : mot de passe <b>${DEMO_PWD}</b> pour les deux comptes.</div>`
+    <div class="hint">Démo : le mot de passe (<b>${DEMO_PWD}</b>) est déjà rempli, cliquez sur « Se connecter ».</div>`
     : `<div><h1 style="font-size:1.35rem">Vérification en deux étapes</h1><p class="muted small" style="margin:4px 0 0">Saisissez le code à 6 chiffres affiché dans l'application d'authentification de ${esc(u.name)}.</p></div>
     <input class="in otp" id="lgOtp" inputmode="numeric" maxlength="6" data-bind="auth.otp" value="${esc(A.otp)}" aria-label="Code à 6 chiffres">
     ${A.msg ? `<div class="err" role="alert">${esc(A.msg)}</div>` : ""}
     <button class="btn primary big" type="submit">Valider</button>
     <button type="button" class="btn" data-act="back">Retour</button>
-    <div class="hint">Démo : code <b>${DEMO_OTP}</b></div>`}
+    <div class="hint">Démo : le code (<b>${DEMO_OTP}</b>) est déjà rempli, cliquez sur « Valider ».</div>`}
     <p class="small muted" style="margin:0">Dans l'application : mots de passe chiffrés (Argon2id), 12 caractères minimum, déconnexion automatique après 30 minutes d'inactivité, et chaque connexion est inscrite au journal d'audit.</p>
   </form>`;
 }
@@ -406,10 +406,10 @@ function submitLogin() {
   if (A.step === "pwd") {
     if ((A.fails[A.who] || 0) >= 5) return;
     if (A.pwd !== DEMO_PWD) { A.fails[A.who] = (A.fails[A.who] || 0) + 1; const left = 5 - A.fails[A.who]; A.msg = left > 0 ? `Identifiant ou mot de passe incorrect. ${left} essai${left > 1 ? "s" : ""} restant${left > 1 ? "s" : ""}.` : ""; A.pwd = ""; renderLogin(); document.getElementById("lgPwd")?.focus(); return; }
-    A.fails[A.who] = 0; A.pwd = ""; A.msg = "";
+    A.fails[A.who] = 0; A.pwd = DEMO_PWD; A.msg = "";
     if (u.twofa) { A.step = "otp"; renderLogin(); document.getElementById("lgOtp")?.focus(); return; }
   } else if (A.otp !== DEMO_OTP) { A.msg = "Code incorrect."; A.otp = ""; renderLogin(); document.getElementById("lgOtp")?.focus(); return; }
-  A.in = true; A.step = "pwd"; A.otp = ""; A.msg = ""; S.user = A.who; S.error = ""; render();
+  A.in = true; A.step = "pwd"; A.otp = DEMO_OTP; A.msg = ""; S.user = A.who; S.error = ""; render();
 }
 function render() {
   renderLogin();
@@ -423,7 +423,7 @@ function render() {
 }
 const me = () => S.users[S.user];
 const tableBadge = t => t ? `<span class="badge t${t}" title="Tableau ${t}">${t}</span>` : "";
-const lockMsg = what => `<div class="panel lock"><h2>Accès réservé</h2><p class="muted">${what} : accès réservé au titulaire et aux pharmaciens. Le rôle « caissier » n'y a pas accès : la règle est appliquée par le serveur, pas seulement par l'écran.</p><button class="btn" data-act="as-pharm">Se reconnecter en tant que Dr Sami Ben Ali</button></div>`;
+const lockMsg = what => `<div class="panel lock"><h2>Accès réservé</h2><p class="muted">${what} : accès réservé au titulaire et aux pharmaciens. Le rôle « caissier » n'y a pas accès : la règle est appliquée par le serveur, pas seulement par l'écran.</p><button class="btn" data-act="as-pharm">Se reconnecter en tant que Dr Fares Ben Salem</button></div>`;
 
 /* ---------- Accueil ---------- */
 function sessionSales() { return S.sales.filter(s => !s.z); }
@@ -740,9 +740,9 @@ document.addEventListener("click", e => {
   else if (a === "pay") pay();
   else if (a === "scenario") scenario(el.dataset.s);
   else if (a === "close") { const o = document.getElementById("overlay"); o.hidden = true; o.innerHTML = ""; if (route() === "caisse") document.getElementById("q")?.focus(); }
-  else if (a === "as-pharm") { S.auth = { ...S.auth, in: false, who: "pharm", step: "pwd", msg: "" }; render(); document.getElementById("lgPwd")?.focus(); }
-  else if (a === "logout") { S.auth = { ...S.auth, in: false, step: "pwd", msg: "", pwd: "", otp: "" }; S.basket = []; render(); }
-  else if (a === "pick") { S.auth.who = el.dataset.u; S.auth.msg = ""; S.auth.pwd = ""; renderLogin(); document.getElementById("lgPwd")?.focus(); }
+  else if (a === "as-pharm") { S.auth = { ...S.auth, in: false, who: "pharm", step: "pwd", msg: "", pwd: DEMO_PWD }; render(); document.getElementById("lgPwd")?.focus(); }
+  else if (a === "logout") { S.auth = { ...S.auth, in: false, step: "pwd", msg: "", pwd: DEMO_PWD, otp: DEMO_OTP }; S.basket = []; render(); }
+  else if (a === "pick") { S.auth.who = el.dataset.u; S.auth.msg = ""; S.auth.pwd = DEMO_PWD; renderLogin(); document.getElementById("lgPwd")?.focus(); }
   else if (a === "unlock") { S.auth.fails[S.auth.who] = 0; S.auth.msg = ""; renderLogin(); }
   else if (a === "back") { S.auth.step = "pwd"; S.auth.msg = ""; renderLogin(); }
   else if (a === "sf") { S.stockFilter = el.dataset.f; render(); }
@@ -774,7 +774,7 @@ document.addEventListener("keydown", e => {
 });
 window.addEventListener("hashchange", () => { if (!S.auth.in) return; S.error = ""; render(); window.scrollTo(0, 0); });
 render();
-document.getElementById("lgPwd")?.focus();
+document.querySelector("#loginForm .btn.primary")?.focus();
 </script>
 </body>
 </html>
