@@ -158,15 +158,25 @@ td.num{white-space:nowrap}
 .denoms label{display:flex;flex-direction:column;gap:3px;font:.8rem var(--f-mono);color:var(--muted)}
 .lock{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
 
+.who b{color:var(--ink);font-weight:600}
+.login{position:fixed;inset:0;z-index:40;background:var(--bg);overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding-block:calc(48px + env(safe-area-inset-top,0px)) 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.login-card{width:min(100%,420px);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:28px 24px;display:flex;flex-direction:column;gap:16px}
+.login-card .brand{padding:0}
+.accts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.acct{border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--sunk);cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px}
+.acct small{color:var(--muted)}
+.acct[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.hint{font:.8rem var(--f-mono);color:var(--muted);background:var(--sunk);border-radius:7px;padding:8px 10px}
+.otp{font:600 1.4rem var(--f-mono);letter-spacing:.4em;text-align:center}
 @media (max-width:900px){
-  .app{grid-template-columns:minmax(0,1fr)}
+  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr}
   .rail{min-width:0}
   .rail{border-right:0;border-bottom:1px solid var(--line);padding:10px max(12px,env(safe-area-inset-right,0px)) 10px max(12px,env(safe-area-inset-left,0px));gap:10px}
   .brand{display:none}
   .nav{flex-direction:row;overflow-x:auto;gap:4px}
   .nav a{white-space:nowrap;padding:7px 10px}
   .nav .k{display:none}
-  .who{margin-top:0;flex-direction:row;align-items:center}
+  .who{margin-top:0;flex-direction:row;align-items:center;flex-wrap:wrap}
   .who span{white-space:nowrap}
   .grid2{grid-template-columns:1fr}
   .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -187,17 +197,12 @@ td.num{white-space:nowrap}
       <strong>PharmaCare</strong>
     </div>
     <nav class="nav" id="nav"></nav>
-    <div class="who">
-      <span>Connecté :</span>
-      <select id="user" aria-label="Utilisateur connecté">
-        <option value="pharm">Dr Sami Ben Ali · titulaire</option>
-        <option value="caisse">Amine Trabelsi · caissier</option>
-      </select>
-    </div>
+    <div class="who" id="who"></div>
   </aside>
   <main><div class="wrap" id="view"></div></main>
 </div>
 <div class="overlay" id="overlay" hidden></div>
+<div class="login" id="login" hidden></div>
 
 <script>
 "use strict";
@@ -241,9 +246,10 @@ function vatBreak(lines) {
 const P = (id, code, name, dci, price, vat, table, remb, min, lots) => ({ id, code, name, dci, price, vat, table, remb, min, lots: lots.map(([no, m, qty]) => ({ no, exp: addMonths(m), qty })) });
 const S = {
   user: "pharm",
+  auth: { in: false, who: "pharm", step: "pwd", fails: {}, pwd: "", otp: "", msg: "" },
   users: {
-    pharm: { name: "Dr Sami Ben Ali", role: "Pharmacien titulaire", pharmacist: true },
-    caisse: { name: "Amine Trabelsi", role: "Caissier", pharmacist: false },
+    pharm: { name: "Dr Sami Ben Ali", role: "Pharmacien titulaire", pharmacist: true, login: "sami", twofa: true },
+    caisse: { name: "Amine Trabelsi", role: "Caissier", pharmacist: false, login: "amine", twofa: false },
   },
   products: [
     P("p1", "6191234500011", "Doliprane 1000 mg cp B/8", "paracétamol", 2350, 7, null, true, 30, [["L2402C", 1, 6], ["L2411A", 22, 64]]),
@@ -369,7 +375,45 @@ const VIEWS = [
   ["ordonnancier", "Ordonnancier", ""], ["cnam", "CNAM", ""], ["cloture", "Clôture Z", ""],
 ];
 const route = () => { const h = location.hash.slice(1); return VIEWS.some(v => v[0] === h) ? h : "accueil"; };
+const DEMO_PWD = "officine-tunis", DEMO_OTP = "246810";
+function renderLogin() {
+  const box = document.getElementById("login"), A = S.auth;
+  box.hidden = A.in;
+  document.getElementById("who").innerHTML = A.in ? `<span>Connecté : <b>${esc(me().name)}</b> · ${esc(me().role)}</span><button class="btn sm" data-act="logout">Se déconnecter</button>` : "";
+  if (A.in) { box.innerHTML = ""; return; }
+  const u = S.users[A.who], fails = A.fails[A.who] || 0, locked = fails >= 5;
+  box.innerHTML = `<form class="login-card" id="loginForm" autocomplete="off">
+    <div class="brand"><svg class="cross" viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="7" fill="var(--accent)"/><path d="M12 6h6v6h6v6h-6v6h-6v-6H6v-6h6z" fill="var(--on-accent)"/></svg><strong>PharmaCare</strong></div>
+    ${A.step === "pwd" ? `<div><h1 style="font-size:1.35rem">Connexion</h1><p class="muted small" style="margin:4px 0 0">Pharmacie de démonstration · Caisse 1</p></div>
+    <div class="accts">${Object.entries(S.users).map(([k, x]) => `<button type="button" class="acct" data-act="pick" data-u="${k}" aria-pressed="${k === A.who}"><span>${esc(x.name)}</span><small>${esc(x.role)}</small></button>`).join("")}</div>
+    <label class="f">Identifiant<input class="in" id="lgUser" value="${esc(u.login)}" readonly></label>
+    <label class="f">Mot de passe<input class="in" id="lgPwd" type="password" data-bind="auth.pwd" value="${esc(A.pwd)}" ${locked ? "disabled" : ""} autocomplete="off"></label>
+    ${locked ? `<div class="err" role="alert">Compte verrouillé après 5 essais. Dans l'application, il se débloque après 15 minutes ou par le titulaire.</div><button type="button" class="btn" data-act="unlock">Débloquer (démo)</button>`
+      : A.msg ? `<div class="err" role="alert">${esc(A.msg)}</div>` : ""}
+    <button class="btn primary big" type="submit" ${locked ? "disabled" : ""}>Se connecter</button>
+    <div class="hint">Démo : mot de passe <b>${DEMO_PWD}</b> pour les deux comptes.</div>`
+    : `<div><h1 style="font-size:1.35rem">Vérification en deux étapes</h1><p class="muted small" style="margin:4px 0 0">Saisissez le code à 6 chiffres affiché dans l'application d'authentification de ${esc(u.name)}.</p></div>
+    <input class="in otp" id="lgOtp" inputmode="numeric" maxlength="6" data-bind="auth.otp" value="${esc(A.otp)}" aria-label="Code à 6 chiffres">
+    ${A.msg ? `<div class="err" role="alert">${esc(A.msg)}</div>` : ""}
+    <button class="btn primary big" type="submit">Valider</button>
+    <button type="button" class="btn" data-act="back">Retour</button>
+    <div class="hint">Démo : code <b>${DEMO_OTP}</b></div>`}
+    <p class="small muted" style="margin:0">Dans l'application : mots de passe chiffrés (Argon2id), 12 caractères minimum, déconnexion automatique après 30 minutes d'inactivité, et chaque connexion est inscrite au journal d'audit.</p>
+  </form>`;
+}
+function submitLogin() {
+  const A = S.auth, u = S.users[A.who];
+  if (A.step === "pwd") {
+    if ((A.fails[A.who] || 0) >= 5) return;
+    if (A.pwd !== DEMO_PWD) { A.fails[A.who] = (A.fails[A.who] || 0) + 1; const left = 5 - A.fails[A.who]; A.msg = left > 0 ? `Identifiant ou mot de passe incorrect. ${left} essai${left > 1 ? "s" : ""} restant${left > 1 ? "s" : ""}.` : ""; A.pwd = ""; renderLogin(); document.getElementById("lgPwd")?.focus(); return; }
+    A.fails[A.who] = 0; A.pwd = ""; A.msg = "";
+    if (u.twofa) { A.step = "otp"; renderLogin(); document.getElementById("lgOtp")?.focus(); return; }
+  } else if (A.otp !== DEMO_OTP) { A.msg = "Code incorrect."; A.otp = ""; renderLogin(); document.getElementById("lgOtp")?.focus(); return; }
+  A.in = true; A.step = "pwd"; A.otp = ""; A.msg = ""; S.user = A.who; S.error = ""; render();
+}
 function render() {
+  renderLogin();
+  if (!S.auth.in) return;
   const a = document.activeElement, id = a && a.id;
   let sel = null; try { sel = id && a.selectionStart != null ? [a.selectionStart, a.selectionEnd] : null; } catch (e) {}
   const r = route();
@@ -379,7 +423,7 @@ function render() {
 }
 const me = () => S.users[S.user];
 const tableBadge = t => t ? `<span class="badge t${t}" title="Tableau ${t}">${t}</span>` : "";
-const lockMsg = what => `<div class="panel lock"><h2>Accès réservé</h2><p class="muted">${what} est réservé au titulaire et aux pharmaciens. Le rôle « caissier » n'y a pas accès : la règle est appliquée par le serveur, pas seulement par l'écran.</p><button class="btn" data-act="as-pharm">Se connecter en tant que Dr Sami Ben Ali</button></div>`;
+const lockMsg = what => `<div class="panel lock"><h2>Accès réservé</h2><p class="muted">${what} : accès réservé au titulaire et aux pharmaciens. Le rôle « caissier » n'y a pas accès : la règle est appliquée par le serveur, pas seulement par l'écran.</p><button class="btn" data-act="as-pharm">Se reconnecter en tant que Dr Sami Ben Ali</button></div>`;
 
 /* ---------- Accueil ---------- */
 function sessionSales() { return S.sales.filter(s => !s.z); }
@@ -415,7 +459,7 @@ function vHome() {
         <button class="btn" data-act="scenario" data-s="cnam">Assuré CNAM, maladie chronique (APCI)</button>
         <button class="btn" data-act="scenario" data-s="tabB">Stupéfiant (tableau B) sur ordonnance</button>
       </div>
-      <p class="small muted" style="margin:12px 0 0">Changez d'utilisateur en bas du menu pour voir les droits : un caissier ne peut ni délivrer un produit des tableaux A, B, C, ni clôturer la caisse.</p>
+      <p class="small muted" style="margin:12px 0 0">Déconnectez-vous (en bas du menu) et entrez avec le compte caissier pour voir les droits : un caissier ne peut ni délivrer un produit des tableaux A, B, C, ni clôturer la caisse.</p>
     </div>
   </div>
   <div class="note">Cette page est une maquette interactive. Dans l'application réelle, ces règles sont appliquées par la base de données PostgreSQL : historique non modifiable, numérotation sans trou des tickets et du registre, stock jamais négatif, ventes enregistrées une seule fois même en cas de coupure.</div>`;
@@ -674,11 +718,11 @@ function setPath(path, v) { const k = path.split("."); let o = S; while (k.lengt
 document.addEventListener("input", e => {
   const el = e.target;
   if (el.id === "q") { S.q = el.value; render(); return; }
+  if (el.dataset.bind && el.dataset.bind.startsWith("auth.")) { setPath(el.dataset.bind, el.value); return; }
   if (el.dataset.bind) { setPath(el.dataset.bind, el.value); if (el.dataset.bind.startsWith("pay.")) S.error = ""; render(); }
 });
 document.addEventListener("change", e => {
   const el = e.target, a = el.dataset.act;
-  if (el.id === "user") { S.user = el.value; S.error = ""; render(); return; }
   if (a === "disc") { S.basket[+el.dataset.i].disc = +el.value; render(); }
   if (a === "cnamOn") { S.cnam.on = el.checked; render(); }
   if (a === "apci") { S.cnam.apci = el.checked; render(); }
@@ -696,7 +740,11 @@ document.addEventListener("click", e => {
   else if (a === "pay") pay();
   else if (a === "scenario") scenario(el.dataset.s);
   else if (a === "close") { const o = document.getElementById("overlay"); o.hidden = true; o.innerHTML = ""; if (route() === "caisse") document.getElementById("q")?.focus(); }
-  else if (a === "as-pharm") { S.user = "pharm"; document.getElementById("user").value = "pharm"; render(); }
+  else if (a === "as-pharm") { S.auth = { ...S.auth, in: false, who: "pharm", step: "pwd", msg: "" }; render(); document.getElementById("lgPwd")?.focus(); }
+  else if (a === "logout") { S.auth = { ...S.auth, in: false, step: "pwd", msg: "", pwd: "", otp: "" }; S.basket = []; render(); }
+  else if (a === "pick") { S.auth.who = el.dataset.u; S.auth.msg = ""; S.auth.pwd = ""; renderLogin(); document.getElementById("lgPwd")?.focus(); }
+  else if (a === "unlock") { S.auth.fails[S.auth.who] = 0; S.auth.msg = ""; renderLogin(); }
+  else if (a === "back") { S.auth.step = "pwd"; S.auth.msg = ""; renderLogin(); }
   else if (a === "sf") { S.stockFilter = el.dataset.f; render(); }
   else if (a === "tamper") { const e1 = S.ord[0]; S.tampered = { no: e1.no, qty: e1.qty }; e1.qty = e1.qty + 1; render(); }
   else if (a === "untamper") { const e1 = S.ord.find(x => x.no === S.tampered.no); e1.qty = S.tampered.qty; S.tampered = null; render(); }
@@ -713,7 +761,9 @@ document.addEventListener("click", e => {
   else if (a === "z") closeZ();
 });
 function exact() { const t = basketTotals(S.basket, S.cnam), card = parseDT(S.pay.card) || 0; S.pay.cash = fmt(Math.max(0, t.due - card)).replace(/ /g, ""); S.error = ""; render(); }
+document.addEventListener("submit", e => { if (e.target.id === "loginForm") { e.preventDefault(); submitLogin(); } });
 document.addEventListener("keydown", e => {
+  if (!S.auth.in) return;
   const ov = document.getElementById("overlay");
   if (!ov.hidden) { if (e.key === "Escape" || e.key === "Enter") { e.preventDefault(); ov.hidden = true; ov.innerHTML = ""; document.getElementById("q")?.focus(); } return; }
   if (route() !== "caisse") return;
@@ -722,8 +772,9 @@ document.addEventListener("keydown", e => {
   else if (e.key === "F12" || (e.key === "Enter" && e.ctrlKey)) { e.preventDefault(); pay(); }
   else if (e.key === "Enter" && e.target.id === "q") { const r = searchResults(); if (r.length) { e.preventDefault(); addToBasket(r[0].id); render(); } }
 });
-window.addEventListener("hashchange", () => { S.error = ""; render(); window.scrollTo(0, 0); });
+window.addEventListener("hashchange", () => { if (!S.auth.in) return; S.error = ""; render(); window.scrollTo(0, 0); });
 render();
+document.getElementById("lgPwd")?.focus();
 </script>
 </body>
 </html>
