@@ -67,7 +67,7 @@ main{min-width:0;padding-block:24px 48px;padding-left:max(16px,env(safe-area-ins
 .tile .val{font:600 1.45rem var(--f-mono);font-variant-numeric:tabular-nums}
 .tile .sub{font-size:.8rem;color:var(--muted)}
 
-.btn{border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:8px 14px;cursor:pointer;font-weight:500}
+.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:8px 14px;cursor:pointer;font-weight:500}
 .btn:hover{background:var(--sunk)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .btn.primary:hover{filter:brightness(1.07)}
@@ -78,7 +78,8 @@ main{min-width:0;padding-block:24px 48px;padding-left:max(16px,env(safe-area-ins
 .chip{border:1px solid var(--line);background:var(--sunk);border-radius:999px;padding:5px 12px;cursor:pointer;font-size:.85rem}
 .chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 
-label.f{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted);min-width:0;flex:1 1 160px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted);min-width:0}
+.row>label.f{flex:1 1 160px}
 input.in,select.in{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--sunk);color:var(--ink)}
 input.in:focus{background:var(--surface)}
 input.amt{text-align:right;font-family:var(--f-mono)}
@@ -166,8 +167,18 @@ td.num{white-space:nowrap}
 .lock{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
 
 .who b{color:var(--ink);font-weight:600}
-.login{position:fixed;inset:0;z-index:40;background:var(--bg);overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding-block:calc(48px + env(safe-area-inset-top,0px)) 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.login-card{width:min(100%,420px);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:28px 24px;display:flex;flex-direction:column;gap:16px}
+.login{position:fixed;inset:0;z-index:40;background:var(--bg);overflow:auto;display:flex;align-items:center;justify-content:center;padding-block:calc(48px + env(safe-area-inset-top,0px)) 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.login-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);width:min(100%,920px);background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 20px 50px rgb(10 40 30 / .08)}
+.login-side{background:var(--accent);color:var(--on-accent);padding:36px 32px;display:flex;flex-direction:column;gap:18px;position:relative;overflow:hidden}
+.login-side h2{font-size:1.7rem;line-height:1.15;color:inherit}
+.login-side p{margin:0;opacity:.9;line-height:1.5}
+.login-side ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;font-size:.92rem}
+.login-side li{display:flex;gap:10px;align-items:flex-start}
+.login-side li::before{content:"+";font:700 1rem var(--f-mono);opacity:.75}
+.login-side .crosses{position:absolute;right:-40px;bottom:-40px;width:220px;height:220px;opacity:.12}
+.login-card{padding:32px 28px;display:flex;flex-direction:column;gap:14px;min-width:0}
+@media (min-width:761px){.login-card .brand{display:none}}
+@media (max-width:760px){.login-wrap{grid-template-columns:1fr}.login-side{display:none}.login{align-items:flex-start}}
 .login-card .brand{padding:0}
 .accts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .acct{border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--sunk);cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px}
@@ -175,6 +186,11 @@ td.num{white-space:nowrap}
 .acct[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
 .hint{font:.8rem var(--f-mono);color:var(--muted);background:var(--sunk);border-radius:7px;padding:8px 10px}
 .otp{font:600 1.4rem var(--f-mono);letter-spacing:.4em;text-align:center}
+.pill.neutral{background:var(--sunk);color:var(--muted)}
+.mode{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.mode button{border:0;background:var(--surface);padding:7px 12px;cursor:pointer;font-weight:500}
+.mode button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+@media (max-width:600px){.hide-sm{display:none}}
 @media (max-width:900px){
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr}
   .rail{min-width:0}
@@ -253,6 +269,7 @@ function vatBreak(lines) {
 const P = (id, code, name, dci, price, vat, table, remb, min, lots) => ({ id, code, name, dci, price, vat, table, remb, min, lots: lots.map(([no, m, qty]) => ({ no, exp: addMonths(m), qty })) });
 const S = {
   user: "pharm",
+  cnamMode: "REMBOURSEMENT", // tiers payant suspendu dans les pharmacies privées depuis le 8 décembre 2025
   auth: { in: false, who: "pharm", step: "pwd", fails: {}, pwd: "officine-tunis", otp: "246810", msg: "" },
   users: {
     pharm: { name: "Dr Fares Ben Salem", role: "Pharmacien titulaire", pharmacist: true, login: "fares", twofa: true },
@@ -299,13 +316,17 @@ function lineCalc(l) {
   return { p, gross, disc, ttc: gross - disc };
 }
 function cnamRate(c) { return c.apci ? 100 : 70; }
+/* tarif de référence CNAM par unité (millimes) : la CNAM rembourse sur ce tarif, le patient paie la différence */
+const REF = { p1: 2300, p2: 1900, p3: 12500, p4: 4600, p5: 8900, p6: 6100, p7: 18900, p8: 3450, p9: 5780 };
 function basketTotals(basket, cnam) {
   const calc = basket.map(lineCalc);
   const total = calc.reduce((s, c) => s + c.ttc, 0);
   const disc = calc.reduce((s, c) => s + c.disc, 0);
-  const rembBase = calc.filter(c => c.p.remb).reduce((s, c) => s + c.ttc, 0);
-  const partCnam = cnam.on ? Math.round(rembBase * cnamRate(cnam) / 100) : 0;
-  return { calc, total, disc, partCnam, due: total - partCnam };
+  const rembBase = calc.reduce((s, c, i) => s + (c.p.remb ? Math.min(c.ttc, REF[c.p.id] ? REF[c.p.id] * basket[i].qty : c.ttc) : 0), 0);
+  const cnamShare = cnam.on ? Math.round(rembBase * cnamRate(cnam) / 100) : 0;
+  const tp = S.cnamMode === "TIERS_PAYANT";
+  const partCnam = tp ? cnamShare : 0;
+  return { calc, total, disc, rembBase, cnamShare, partCnam, refundable: tp ? 0 : cnamShare, due: total - partCnam };
 }
 
 /* registre : chaînage des empreintes */
@@ -341,7 +362,7 @@ function completeSale(o) {
   const lines = t.calc.map((c, i) => ({ name: c.p.name, table: c.p.table, vat: c.p.vat, qty: o.basket[i].qty, price: c.p.price, disc: c.disc, ttc: c.ttc, remb: c.p.remb, lots: picks[i].map(pk => ({ no: pk.lot.no, exp: pk.lot.exp, qty: pk.qty })) }));
   const change = card + cash - t.due;
   const sale = { no, at, user: user.name, lines, total: t.total, disc: t.disc, partCnam: t.partCnam, due: t.due, card, cash, change, cashNet: cash - change,
-    cnam: o.cnam.on ? { ...o.cnam, rate: cnamRate(o.cnam) } : null, rx: ctrl.length ? { ...o.rx } : null, vat: vatBreak(lines) };
+    cnam: o.cnam.on ? { ...o.cnam, rate: cnamRate(o.cnam), mode: S.cnamMode, share: t.cnamShare, base: t.rembBase } : null, rx: ctrl.length ? { ...o.rx } : null, vat: vatBreak(lines) };
   S.sales.push(sale);
   // ordonnancier : transcription automatique, une ligne par lot
   lines.forEach(l => { if (!l.table) return; l.lots.forEach(lt => {
@@ -349,7 +370,8 @@ function completeSale(o) {
     const e = { no: ++S.ordSeq, date: at, product: l.name, table: l.table, lot: lt.no, qty: lt.qty, presc: o.rx.presc.trim(), patient: o.rx.patient.trim(), pharm: user.name, ticket: no };
     e.h = ordHash(e, prev); S.ord.push(e);
   }); });
-  if (sale.cnam) S.dossiers.push({ id: "D-" + no.slice(1), at, assure: o.cnam.assure.trim(), benef: o.cnam.benef, regime: o.cnam.regime, apci: o.cnam.apci, amount: t.partCnam, status: "attente", bord: null, ticket: no });
+  if (sale.cnam) S.dossiers.push({ id: "D-" + no.slice(1), at, assure: o.cnam.assure.trim(), benef: o.cnam.benef, regime: o.cnam.regime, apci: o.cnam.apci,
+    amount: t.cnamShare, status: S.cnamMode === "TIERS_PAYANT" ? "attente" : "patient", bord: null, ticket: no });
   return sale;
 }
 
@@ -372,7 +394,7 @@ function completeSale(o) {
     status: st, bord: st === "attente" ? null : st === "paye" ? S.bordereaux[0].no : S.bordereaux[1].no, ticket: "—" }));
   // trois ventes du matin
   completeSale({ ...base, at: today(8), basket: [{ pid: "p1", qty: 2 }, { pid: "p12", qty: 1 }], pay: { cash: "10", card: "" } });
-  completeSale({ ...base, at: today(9), basket: [{ pid: "p4", qty: 3 }, { pid: "p5", qty: 1 }], cnam: { on: true, apci: true, regime: "Filière publique", assure: "445120-09", benef: "Assuré" }, pay: { cash: "", card: "" } });
+  completeSale({ ...base, at: today(9), basket: [{ pid: "p4", qty: 3 }, { pid: "p5", qty: 1 }], cnam: { on: true, apci: true, regime: "Filière publique", assure: "445120-09", benef: "Assuré" }, pay: { cash: "", card: "23,150" } });
   completeSale({ ...base, at: today(10), basket: [{ pid: "p10", qty: 1, disc: 10 }], pay: { cash: "", card: "25,650" } });
 })();
 
@@ -389,7 +411,13 @@ function renderLogin() {
   document.getElementById("who").innerHTML = A.in ? `<span>Connecté : <b>${esc(me().name)}</b> · ${esc(me().role)}</span><button class="btn sm" data-act="logout">Se déconnecter</button>` : "";
   if (A.in) { box.innerHTML = ""; return; }
   const u = S.users[A.who], fails = A.fails[A.who] || 0, locked = fails >= 5;
-  box.innerHTML = `<form class="login-card" id="loginForm" autocomplete="off">
+  box.innerHTML = `<div class="login-wrap"><aside class="login-side" aria-hidden="true">
+      <div class="brand"><svg class="cross" viewBox="0 0 30 30"><rect width="30" height="30" rx="7" fill="var(--on-accent)"/><path d="M12 6h6v6h6v6h-6v6h-6v-6H6v-6h6z" fill="var(--accent)"/></svg><strong>PharmaCare</strong></div>
+      <h2>Le logiciel d'officine pensé pour la Tunisie</h2>
+      <p>Caisse rapide, stock par lot, CNAM, ordonnancier et tableau B, en français et en arabe.</p>
+      <ul><li>Fonctionne sans internet dans la pharmacie</li><li>Registres infalsifiables, conservés 10 ans</li><li>Commandes suggérées d'après les ventes</li><li>Lecture d'ordonnance par IA</li></ul>
+      <svg class="crosses" viewBox="0 0 30 30"><path d="M12 2h6v10h10v6H18v10h-6V18H2v-6h10z" fill="currentColor"/></svg>
+    </aside><form class="login-card" id="loginForm" autocomplete="off">
     <div class="brand"><svg class="cross" viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="7" fill="var(--accent)"/><path d="M12 6h6v6h6v6h-6v6h-6v-6H6v-6h6z" fill="var(--on-accent)"/></svg><strong>PharmaCare</strong></div>
     ${A.step === "pwd" ? `<div><h1 style="font-size:1.35rem">Connexion</h1><p class="muted small" style="margin:4px 0 0">Pharmacie de démonstration · Caisse 1</p></div>
     <div class="accts">${Object.entries(S.users).map(([k, x]) => `<button type="button" class="acct" data-act="pick" data-u="${k}" aria-pressed="${k === A.who}"><span>${esc(x.name)}</span><small>${esc(x.role)}</small></button>`).join("")}</div>
@@ -406,7 +434,7 @@ function renderLogin() {
     <button type="button" class="btn" data-act="back">Retour</button>
     <div class="hint">Démo : le code (<b>${DEMO_OTP}</b>) est déjà rempli, cliquez sur « Valider ».</div>`}
     <p class="small muted" style="margin:0">Dans l'application : mots de passe chiffrés (Argon2id), 12 caractères minimum, déconnexion automatique après 30 minutes d'inactivité, et chaque connexion est inscrite au journal d'audit.</p>
-  </form>`;
+  </form></div>`;
 }
 function submitLogin() {
   const A = S.auth, u = S.users[A.who];
@@ -436,7 +464,7 @@ const lockMsg = what => `<div class="panel lock"><h2>Accès réservé</h2><p cla
 function sessionSales() { return S.sales.filter(s => !s.z); }
 function vHome() {
   const ss = sessionSales(), ca = ss.reduce((s, x) => s + x.total, 0);
-  const owed = S.dossiers.filter(d => d.status !== "paye").reduce((s, d) => s + d.amount, 0);
+  const owed = S.dossiers.filter(d => d.status !== "paye" && d.status !== "patient").reduce((s, d) => s + d.amount, 0);
   const soon = [], blocked = [], low = [];
   S.products.forEach(p => {
     p.lots.forEach(l => { if (!l.qty) return; if (!usable(l)) blocked.push([p, l]); else if (monthsLeft(l.exp) < 3) soon.push([p, l]); });
@@ -448,7 +476,7 @@ function vHome() {
   <div class="tiles">
     <div class="tile"><span class="lbl">CA du jour TTC</span><span class="val">${fmt(ca)}</span><span class="sub">DT · session en cours</span></div>
     <div class="tile"><span class="lbl">Ventes</span><span class="val">${ss.length}</span><span class="sub">panier moyen ${fmt(ss.length ? Math.round(ca / ss.length) : 0)} DT</span></div>
-    <div class="tile"><span class="lbl">Créances CNAM</span><span class="val">${fmt(owed)}</span><span class="sub">DT · ${S.dossiers.filter(d => d.status !== "paye").length} dossiers ouverts</span></div>
+    <div class="tile"><span class="lbl">Créances CNAM</span><span class="val">${fmt(owed)}</span><span class="sub">DT · ${S.dossiers.filter(d => d.status !== "paye" && d.status !== "patient").length} dossiers ouverts</span></div>
     <div class="tile"><span class="lbl">Ordonnancier</span><span class="val">n° ${S.ordSeq}</span><span class="sub">${ordIntact() ? "registre altéré" : "registre intègre"}</span></div>
   </div>
   <div class="grid2">
@@ -486,7 +514,7 @@ function vPos() {
   const rest = t.due - (isNaN(card) ? 0 : card) - (isNaN(cash) ? 0 : cash);
   const canPay = S.basket.length && !isNaN(card) && !isNaN(cash) && rest <= 0 && card <= t.due;
   return `<div class="head"><div><h1>Caisse 1</h1><p>Session ouverte à ${ftime(S.session.opened)} · fond de caisse ${fmt(S.session.fond)} DT · ${esc(me().name)}</p></div>
-    <div class="row small muted"><span><span class="kbd">Échap</span> recherche</span><span><span class="kbd">F8</span> montant exact</span><span><span class="kbd">F12</span> encaisser</span></div></div>
+    <div class="row small muted hide-sm"><span><span class="kbd">Échap</span> recherche</span><span><span class="kbd">F8</span> montant exact</span><span><span class="kbd">F12</span> encaisser</span></div></div>
   <div class="row"><span class="small muted">Scénarios :</span>
     <button class="chip" data-act="scenario" data-s="simple">Vente simple</button>
     <button class="chip" data-act="scenario" data-s="cnam">CNAM APCI</button>
@@ -502,18 +530,18 @@ function vPos() {
           <div class="num">${fmt(p.price)}</div></div>`; }).join("")}</div>` : S.q.trim() ? `<div class="results"><div class="empty">Aucun produit pour « ${esc(S.q)} »</div></div>` : ""}
       </div>
       <div class="panel" style="padding:0">
-        ${S.basket.length ? `<div class="tbl-wrap"><table><thead><tr><th>Produit</th><th>Qté</th><th class="r">PU</th><th>Remise</th><th class="r">Total</th><th></th></tr></thead><tbody>
+        ${S.basket.length ? `<div class="tbl-wrap"><table><thead><tr><th>Produit</th><th>Qté</th><th class="r hide-sm">PU</th><th class="hide-sm">Remise</th><th class="r">Total</th><th></th></tr></thead><tbody>
         ${t.calc.map((c, i) => { const b = S.basket[i], nl = nextLot(c.p); return `<tr>
           <td><div>${esc(c.p.name)}${tableBadge(c.p.table)}</div><div class="small muted">${nl ? `lot ${nl.no} · exp ${fexp(nl.exp)}` : "rupture"}${c.p.remb ? " · remboursable" : ""}</div></td>
           <td><span class="qty"><button data-act="qty" data-i="${i}" data-d="-1" aria-label="Moins">−</button><span>${b.qty}</span><button data-act="qty" data-i="${i}" data-d="1" aria-label="Plus">+</button></span></td>
-          <td class="r num">${fmt(c.p.price)}</td>
-          <td>${c.p.vat === 19 ? `<select class="in" id="disc${i}" data-act="disc" data-i="${i}" style="width:auto;padding:4px 6px">${[0, 5, 10, 15].map(v => `<option value="${v}" ${v === (b.disc || 0) ? "selected" : ""}>${v} %</option>`).join("")}</select>` : `<span class="small muted" title="Prix officiel : pas de remise">prix officiel</span>`}</td>
+          <td class="r num hide-sm">${fmt(c.p.price)}</td>
+          <td class="hide-sm">${c.p.vat === 19 ? `<select class="in" id="disc${i}" data-act="disc" data-i="${i}" style="width:auto;padding:4px 6px">${[0, 5, 10, 15].map(v => `<option value="${v}" ${v === (b.disc || 0) ? "selected" : ""}>${v} %</option>`).join("")}</select>` : `<span class="small muted" title="Prix officiel : pas de remise">prix officiel</span>`}</td>
           <td class="r num">${fmt(c.ttc)}</td>
           <td><button class="btn sm danger" data-act="del" data-i="${i}" aria-label="Retirer">×</button></td></tr>`; }).join("")}
         </tbody></table></div>` : `<div class="empty">Panier vide. Scannez un produit ou choisissez un scénario ci-dessus.</div>`}
       </div>
       <div class="cnam">
-        <label class="check"><input type="checkbox" id="cnamOn" data-act="cnamOn" ${S.cnam.on ? "checked" : ""}> Assuré CNAM (tiers payant)</label>
+        <div class="row"><label class="check"><input type="checkbox" id="cnamOn" data-act="cnamOn" ${S.cnam.on ? "checked" : ""}> Assuré CNAM</label> <span class="pill ${S.cnamMode === "TIERS_PAYANT" ? "ok" : "warn"}">${S.cnamMode === "TIERS_PAYANT" ? "Tiers payant" : "Remboursement : le patient paie tout"}</span></div>
         ${S.cnam.on ? `<div class="row">
           <label class="f">Régime<select class="in" id="cRegime" data-bind="cnam.regime">${["Filière publique", "Filière privée", "Remboursement"].map(v => `<option ${v === S.cnam.regime ? "selected" : ""}>${v}</option>`).join("")}</select></label>
           <label class="f">N° d'assuré<input class="in" id="cAssure" data-bind="cnam.assure" value="${esc(S.cnam.assure)}" placeholder="ex. 123456-78"></label>
@@ -536,8 +564,8 @@ function vPos() {
       <h2>Règlement</h2>
       <div class="l"><span>Total TTC</span><span class="num">${fmt(t.total)}</span></div>
       ${t.disc ? `<div class="l muted"><span>dont remises</span><span class="num">${fmt(-t.disc)}</span></div>` : ""}
-      ${S.cnam.on ? `<div class="l" style="color:var(--accent)"><span>Part CNAM (${cnamRate(S.cnam)} %)</span><span class="num">${fmt(-t.partCnam)}</span></div>` : ""}
-      <div class="l due"><span>${S.cnam.on ? "Part assuré" : "À payer"}</span><span class="num">${fmt(t.due)}</span></div>
+      ${S.cnam.on && t.partCnam ? `<div class="l" style="color:var(--accent)"><span>Part CNAM (${cnamRate(S.cnam)} % du tarif de réf.)</span><span class="num">${fmt(-t.partCnam)}</span></div>` : ""}
+      <div class="l due"><span>${S.cnam.on && t.partCnam ? "Part assuré" : "À payer"}</span><span class="num">${fmt(t.due)}</span></div>
       <div class="row" style="margin-top:6px">
         <label class="f">Carte (DT)<input class="in amt" id="payCard" inputmode="decimal" data-bind="pay.card" value="${esc(S.pay.card)}" placeholder="0,000"></label>
         <label class="f">Espèces reçues (DT)<input class="in amt" id="payCash" inputmode="decimal" data-bind="pay.cash" value="${esc(S.pay.cash)}" placeholder="0,000"></label>
@@ -545,6 +573,7 @@ function vPos() {
       <div class="row">${[5, 10, 20, 50].map(v => `<button class="chip" data-act="cash" data-v="${v}">${v} DT</button>`).join("")}<button class="chip" data-act="exact">Montant exact</button></div>
       ${S.basket.length ? (rest > 0 ? `<div class="change rest"><span>Reste à payer</span><span class="num">${fmt(rest)}</span></div>` : `<div class="change ok"><span>Rendu monnaie</span><span class="num">${fmt(-rest)}</span></div>`) : ""}
       ${S.error ? `<div class="err" role="alert">${esc(S.error)}</div>` : ""}
+      ${S.cnam.on && t.refundable ? `<div class="note">Remboursement CNAM à demander par le patient : <b class="num">${fmt(t.refundable)} DT</b> (${cnamRate(S.cnam)} % du tarif de référence ${fmt(t.rembBase)}). Une attestation est imprimée avec le ticket.</div>` : ""}
       <button class="btn primary big" data-act="pay" ${canPay ? "" : "disabled"}>Encaisser ${S.basket.length ? fmt(t.due) + " DT" : ""}</button>
       ${S.basket.length ? `<div class="small muted">TVA incluse : ${vatBreak(t.calc.map(c => ({ vat: c.p.vat, ttc: c.ttc }))).map(v => `${v.rate} % → ${fmt(v.tva)}`).join(" · ")}</div>` : ""}
     </div>
@@ -585,7 +614,8 @@ function showTicket(s) {
     ${s.lines.map(l => `<div>${esc(l.name)}${l.table ? " [" + l.table + "]" : ""}</div>${L(`<span class="i">${l.qty} × ${fmt(l.price)}</span>`, fmt(l.qty * l.price))}
       ${l.disc ? L('<span class="i">remise</span>', fmt(-l.disc)) : ""}${l.lots.map(lt => `<div class="i">lot ${lt.no} · exp ${fexp(lt.exp)}${l.lots.length > 1 ? " · " + lt.qty : ""}</div>`).join("")}`).join("")}<hr>
     ${L("TOTAL TTC", fmt(s.total), "big")}
-    ${s.cnam ? L(`Part CNAM (${s.cnam.rate} %)`, fmt(-s.partCnam)) + L("PART ASSURÉ", fmt(s.due), "big") : ""}
+    ${s.cnam && s.partCnam ? L(`Part CNAM (${s.cnam.rate} %)`, fmt(-s.partCnam)) + L("PART ASSURÉ", fmt(s.due), "big") : ""}
+    ${s.cnam && !s.partCnam ? L("Remboursable CNAM", fmt(s.cnam.share)) + `<div class="i">à demander avec l'attestation, l'ordonnance et les vignettes</div>` : ""}
     ${s.card ? L("Carte", fmt(s.card)) : ""}${s.cash ? L("Espèces", fmt(s.cash)) : ""}${s.change ? L("Rendu", fmt(s.change)) : ""}<hr>
     ${L("TVA", "Base HT · Montant")}${s.vat.map(v => L(v.rate + " %", fmt(v.ht) + " · " + fmt(v.tva))).join("")}
     ${s.cnam ? `<hr><div>CNAM ${esc(s.cnam.regime)} · n° ${esc(s.cnam.assure)} · ${esc(s.cnam.benef)}${s.cnam.apci ? " · APCI" : ""}</div>` : ""}
@@ -635,14 +665,19 @@ function vOrd() {
 
 /* ---------- CNAM ---------- */
 function vCnam() {
-  const open = S.dossiers.filter(d => d.status !== "paye");
+  const open = S.dossiers.filter(d => d.status !== "paye" && d.status !== "patient");
   const age = d => (NOW - d.at) / 864e5;
   const buckets = [["0 à 30 jours", 0, 30], ["31 à 60 jours", 31, 60], ["61 à 90 jours", 61, 90], ["Plus de 90 jours", 91, 1e9]].map(([l, a, b]) => { const ds = open.filter(d => age(d) >= a && age(d) < b + 1); return { l, n: ds.length, s: ds.reduce((x, d) => x + d.amount, 0), late: a > 90 }; });
   const pending = S.dossiers.filter(d => d.status === "attente");
-  const st = { attente: ['info', "À mettre en bordereau"], bord: ['warn', "En bordereau"], depose: ['warn', "Déposé"], paye: ['ok', "Payé"] };
+  const st = { patient: ['neutral', "Remboursement patient"], attente: ['info', "À mettre en bordereau"], bord: ['warn', "En bordereau"], depose: ['warn', "Déposé"], paye: ['ok', "Payé"] };
   const bst = { prepare: ['info', "Préparé"], depose: ['warn', "Déposé à la CNAM"], paye: ['ok', "Payé"] };
-  return `<div class="head"><div><h1>CNAM</h1><p>Tiers payant · créances et bordereaux</p></div>
+  return `<div class="head"><div><h1>CNAM</h1><p>Créances, bordereaux et dossiers</p></div>
     <button class="btn primary" data-act="bord" ${pending.length ? "" : "disabled"}>Créer un bordereau (${pending.length} dossier${pending.length > 1 ? "s" : ""})</button></div>
+  <div class="panel row" style="justify-content:space-between">
+    <div style="flex:1 1 320px;min-width:0"><h3>Mode de prise en charge</h3>
+      <p class="small muted" style="margin:6px 0 0">${S.cnamMode === "TIERS_PAYANT" ? "Tiers payant : la CNAM paie sa part à la pharmacie (bordereaux), le patient paie le reste." : "Remboursement : le tiers payant est suspendu dans les pharmacies privées depuis le 8 décembre 2025. Le patient paie tout et se fait rembourser avec l'attestation, l'ordonnance et les vignettes."}</p></div>
+    <div class="mode" role="group" aria-label="Mode CNAM"><button data-act="cnam-mode" data-m="TIERS_PAYANT" aria-pressed="${S.cnamMode === "TIERS_PAYANT"}">Tiers payant</button><button data-act="cnam-mode" data-m="REMBOURSEMENT" aria-pressed="${S.cnamMode === "REMBOURSEMENT"}">Remboursement</button></div>
+  </div>
   <div class="tiles">${buckets.map(b => `<div class="tile"><span class="lbl">${b.l}</span><span class="val" style="${b.late && b.n ? "color:var(--danger)" : ""}">${fmt(b.s)}</span><span class="sub">DT · ${b.n} dossier${b.n > 1 ? "s" : ""}</span></div>`).join("")}</div>
   <div class="panel"><h2>Bordereaux</h2><div class="tbl-wrap"><table><thead><tr><th>N°</th><th>Période</th><th class="r">Dossiers</th><th class="r">Montant</th><th>Statut</th><th></th></tr></thead><tbody>
     ${S.bordereaux.slice().reverse().map(b => { const ds = S.dossiers.filter(d => d.bord === b.no); return `<tr><td class="num">${b.no}</td><td class="num">${fdate(b.from)} → ${fdate(b.to)}</td><td class="r num">${ds.length}</td><td class="r num">${fmt(ds.reduce((x, d) => x + d.amount, 0))}</td>
@@ -748,6 +783,7 @@ document.addEventListener("click", e => {
   else if (a === "exact") { exact(); }
   else if (a === "pay") pay();
   else if (a === "scenario") scenario(el.dataset.s);
+  else if (a === "cnam-mode") { S.cnamMode = el.dataset.m; render(); }
   else if (a === "close") { const o = document.getElementById("overlay"); o.hidden = true; o.innerHTML = ""; if (route() === "caisse") document.getElementById("q")?.focus(); }
   else if (a === "as-pharm") { S.auth = { ...S.auth, in: false, who: "pharm", step: "pwd", msg: "", pwd: DEMO_PWD }; render(); document.getElementById("lgPwd")?.focus(); }
   else if (a === "logout") { S.auth = { ...S.auth, in: false, step: "pwd", msg: "", pwd: DEMO_PWD, otp: DEMO_OTP }; S.basket = []; render(); }
