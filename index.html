@@ -7,7 +7,7 @@
 <style>body{margin:0}</style>
 <title>PharmaCare Démo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Caveat:wght@500&display=swap">
 <style>
 /* Layout: app shell — slim left rail of screens, working area on the right; stacks to a top tab strip on phones. */
 :root{
@@ -156,6 +156,13 @@ td.num{white-space:nowrap}
 
 .denoms{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
 .denoms label{display:flex;flex-direction:column;gap:3px;font:.8rem var(--f-mono);color:var(--muted)}
+.ocr{background:var(--surface);color:var(--ink);border-radius:12px;width:min(100%,1100px);padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px rgb(0 0 0 / .3)}
+.ocr-head{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.ocr-head h2{margin-right:auto}
+.ocr-grid{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:18px;align-items:start}
+.ocr-left,.ocr-right{display:flex;flex-direction:column;gap:12px;min-width:0}
+.ocr-img{width:100%;border:1px solid var(--line);border-radius:6px;max-height:520px;object-fit:contain;background:#fbfaf4}
+@media (max-width:900px){.ocr-grid{grid-template-columns:1fr}}
 .lock{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
 
 .who b{color:var(--ink);font-weight:600}
@@ -458,6 +465,7 @@ function vHome() {
         <button class="btn" data-act="scenario" data-s="simple">Vente simple avec rendu de monnaie</button>
         <button class="btn" data-act="scenario" data-s="cnam">Assuré CNAM, maladie chronique (APCI)</button>
         <button class="btn" data-act="scenario" data-s="tabB">Stupéfiant (tableau B) sur ordonnance</button>
+        <button class="btn primary" data-act="ocr-open">Lire une ordonnance avec l'IA</button>
       </div>
       <p class="small muted" style="margin:12px 0 0">Déconnectez-vous (en bas du menu) et entrez avec le compte caissier pour voir les droits : un caissier ne peut ni délivrer un produit des tableaux A, B, C, ni clôturer la caisse.</p>
     </div>
@@ -483,7 +491,8 @@ function vPos() {
     <button class="chip" data-act="scenario" data-s="simple">Vente simple</button>
     <button class="chip" data-act="scenario" data-s="cnam">CNAM APCI</button>
     <button class="chip" data-act="scenario" data-s="tabB">Tableau B</button>
-    <button class="chip" data-act="scenario" data-s="para">Parapharmacie + remise</button></div>
+    <button class="chip" data-act="scenario" data-s="para">Parapharmacie + remise</button>
+    <button class="btn sm primary" data-act="ocr-open">Lire une ordonnance (IA)</button></div>
   <div class="grid2">
     <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
       <div class="search">
@@ -765,6 +774,7 @@ document.addEventListener("submit", e => { if (e.target.id === "loginForm") { e.
 document.addEventListener("keydown", e => {
   if (!S.auth.in) return;
   const ov = document.getElementById("overlay");
+  if (!ov.hidden && S.ocr.open) { if (e.key === "Escape") { S.ocr.open = false; ov.hidden = true; ov.innerHTML = ""; } return; }
   if (!ov.hidden) { if (e.key === "Escape" || e.key === "Enter") { e.preventDefault(); ov.hidden = true; ov.innerHTML = ""; document.getElementById("q")?.focus(); } return; }
   if (route() !== "caisse") return;
   if (e.key === "Escape") { e.preventDefault(); S.q = ""; render(); document.getElementById("q").focus(); }
@@ -772,6 +782,197 @@ document.addEventListener("keydown", e => {
   else if (e.key === "F12" || (e.key === "Enter" && e.ctrlKey)) { e.preventDefault(); pay(); }
   else if (e.key === "Enter" && e.target.id === "q") { const r = searchResults(); if (r.length) { e.preventDefault(); addToBasket(r[0].id); render(); } }
 });
+/* ---------- lecture d'ordonnance (IA) ---------- */
+const BOX = { p1: 8, p2: 8, p3: 12, p4: 30, p5: 30, p6: 20, p7: 14, p8: 30, p9: 1, p10: 1, p11: 1, p12: 30 };
+const isoDay = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+const RX_SAMPLES = [
+  { id: "rx1", label: "Infection ORL", doctor: "Dr Karim Jaziri", spec: "Médecine générale", addr: "Rue de Marseille, Tunis",
+    patient: "Hédi M.", age: "42 ans", date: daysAgo(1),
+    lines: [["Augmentin 1g/125mg sachets", "1 sachet matin et soir pendant 7 jours"], ["Doliprane 1000 mg", "1 cp 3 fois par jour si fièvre — 5 jours"], ["Sérum physiologique", "lavage nasal 3 fois par jour"]],
+    result: { prescripteur: "Dr Karim Jaziri", patient: "Hédi M.", date: isoDay(daysAgo(1)), lignes: [
+      { lu: "Augmentin 1g/125mg sachets", posologie: "1 sachet matin et soir, 7 jours", prises_par_jour: 2, unites_par_prise: 1, duree_jours: 7, produit_id: "p3", confiance: 0.94 },
+      { lu: "Doliprane 1000 mg", posologie: "1 cp 3 fois par jour si fièvre, 5 jours", prises_par_jour: 3, unites_par_prise: 1, duree_jours: 5, produit_id: "p1", confiance: 0.97 },
+      { lu: "Sérum physiologique", posologie: "lavage nasal 3 fois par jour", prises_par_jour: 3, unites_par_prise: 1, duree_jours: null, produit_id: "p12", confiance: 0.71 }] } },
+  { id: "rx2", label: "Diabète + tension (APCI)", doctor: "Dr Leïla Mejri", spec: "Endocrinologie", addr: "Avenue de Paris, Tunis",
+    patient: "Ali Trabelsi", age: "61 ans", date: daysAgo(0),
+    lines: [["Glucophage 850", "1 cp matin et soir — 3 mois"], ["Amlor 5 mg", "1 gélule le matin — 3 mois"], ["Ventoline 100 µg", "2 bouffées si gêne respiratoire"]],
+    result: { prescripteur: "Dr Leïla Mejri", patient: "Ali Trabelsi", date: isoDay(daysAgo(0)), lignes: [
+      { lu: "Glucophage 850", posologie: "1 cp matin et soir, 3 mois", prises_par_jour: 2, unites_par_prise: 1, duree_jours: 90, produit_id: "p4", confiance: 0.92 },
+      { lu: "Amlor 5 mg", posologie: "1 gélule le matin, 3 mois", prises_par_jour: 1, unites_par_prise: 1, duree_jours: 90, produit_id: "p5", confiance: 0.88 },
+      { lu: "Ventoline 100 µg", posologie: "2 bouffées si besoin", prises_par_jour: null, unites_par_prise: 2, duree_jours: null, produit_id: "p9", confiance: 0.81 }] } },
+];
+S.ocr = { open: false, src: null, imgUrl: "", blob: null, status: "idle", mode: "", lines: [], rx: { presc: "", patient: "", date: "" }, msg: "" };
+const AI = { sample: null, images: false, checked: false };
+(async () => {
+  try {
+    if (window.claude?.use) {
+      const s = await window.claude.use("sample");
+      if (s) { AI.sample = s; const lim = await s.limits().catch(() => null); AI.images = !!lim?.images; }
+    }
+  } catch (e) { /* no AI here: simulation mode */ }
+  AI.checked = true;
+  if (S.ocr.open) renderOcr();
+})();
+
+
+function drawRx(rx) {
+  const c = document.createElement("canvas"); c.width = 900; c.height = 1180;
+  const g = c.getContext("2d");
+  g.fillStyle = "#fbfaf4"; g.fillRect(0, 0, 900, 1180);
+  g.fillStyle = "#1d3557"; g.font = "600 30px 'IBM Plex Sans', sans-serif"; g.fillText(rx.doctor, 60, 80);
+  g.font = "22px 'IBM Plex Sans', sans-serif"; g.fillText(rx.spec + " · " + rx.addr, 60, 115);
+  g.fillText("Tél. 71 000 000 · Conventionné CNAM", 60, 145);
+  g.strokeStyle = "#1d3557"; g.lineWidth = 2; g.beginPath(); g.moveTo(60, 170); g.lineTo(840, 170); g.stroke();
+  g.fillStyle = "#222"; g.font = "34px 'Caveat', 'Segoe Script', cursive";
+  g.fillText("Tunis, le " + fdate(rx.date), 520, 230);
+  g.fillText(rx.patient + " — " + rx.age, 60, 290);
+  let y = 390;
+  rx.lines.forEach(([drug, poso], i) => {
+    g.save(); g.translate(0, y); g.rotate((i % 2 ? -1 : 1) * 0.008);
+    g.font = "44px 'Caveat', 'Segoe Script', cursive"; g.fillText(drug, 80, 0);
+    g.font = "36px 'Caveat', 'Segoe Script', cursive"; g.fillText(poso, 130, 52);
+    g.restore(); y += 150;
+  });
+  g.font = "34px 'Caveat', cursive"; g.fillText(rx.doctor.replace("Dr ", "Dr. "), 560, 1040);
+  g.strokeStyle = "#555"; g.lineWidth = 1.5; g.beginPath(); g.moveTo(540, 1060); g.bezierCurveTo(600, 1020, 680, 1100, 800, 1050); g.stroke();
+  return c;
+}
+
+async function openSample(id) {
+  const rx = RX_SAMPLES.find(r => r.id === id);
+  try { await document.fonts.load("44px Caveat"); } catch (e) {}
+  const c = drawRx(rx);
+  S.ocr = { ...S.ocr, src: rx, imgUrl: c.toDataURL("image/png"), blob: await new Promise(r => c.toBlob(r, "image/png")), status: "idle", lines: [], msg: "" };
+  renderOcr();
+}
+
+function boxesFor(l) {
+  const box = BOX[l.pid] || 1;
+  if (l.prises_par_jour && l.duree_jours) return Math.max(1, Math.ceil((l.prises_par_jour * (l.unites_par_prise || 1) * l.duree_jours) / box));
+  return 1;
+}
+function applyResult(data, mode) {
+  const lignes = Array.isArray(data?.lignes) ? data.lignes : [];
+  S.ocr.lines = lignes.slice(0, 12).map(l => {
+    const pid = S.products.some(p => p.id === l.produit_id) ? l.produit_id : null;
+    const x = { lu: String(l.lu || ""), posologie: String(l.posologie || ""), prises_par_jour: Number(l.prises_par_jour) || null,
+      unites_par_prise: Number(l.unites_par_prise) || 1, duree_jours: Number(l.duree_jours) || null, confiance: Math.max(0, Math.min(1, Number(l.confiance) || 0)), pid, take: !!pid };
+    x.qty = pid ? boxesFor(x) : 1;
+    return x;
+  });
+  S.ocr.rx = { presc: String(data?.prescripteur || ""), patient: String(data?.patient || ""), date: /^\d{4}-\d{2}-\d{2}$/.test(data?.date || "") ? data.date : "" };
+  S.ocr.status = "done"; S.ocr.mode = mode;
+}
+
+async function readRx() {
+  const o = S.ocr;
+  if (!o.blob) return;
+  o.status = "reading"; o.msg = ""; renderOcr();
+  if (AI.sample && AI.images) {
+    const catalog = S.products.map(p => ({ id: p.id, nom: p.name, dci: p.dci || null, unites_par_boite: BOX[p.id] || 1 }));
+    const prompt = `Tu aides un pharmacien tunisien à lire une ordonnance photographiée (image jointe). Lis-la et associe chaque médicament au catalogue de la pharmacie.
+Règles : ne devine pas ; si un mot est illisible, mets ta meilleure lecture et une confiance basse. Associe un médicament au catalogue par nom commercial ou par DCI (un générique de même DCI et même dosage convient) ; sinon produit_id = null.
+Catalogue (JSON) : ${JSON.stringify(catalog)}
+Réponds uniquement avec un objet JSON de la forme :
+{"prescripteur": string|null, "patient": string|null, "date": "AAAA-MM-JJ"|null,
+ "lignes": [{"lu": "texte du médicament tel qu'écrit", "posologie": "posologie résumée", "prises_par_jour": number|null, "unites_par_prise": number|null, "duree_jours": number|null, "produit_id": string|null, "confiance": number entre 0 et 1}]}`;
+    try {
+      const data = await AI.sample.json(prompt, { images: [o.blob] });
+      applyResult(data, "ai");
+    } catch (e) {
+      const why = { not_granted: "L'accès à Claude a été refusé pour cette page.", rate_limited: "Trop de demandes : réessayez dans un moment.",
+        image_rejected: "Image refusée : essayez une photo JPEG ou PNG plus petite.", refused: "Lecture refusée pour cette image.", invalid_json: "Réponse illisible : réessayez." }[e?.code] || "La lecture n'a pas abouti.";
+      if (o.src) { applyResult(o.src.result, "sim"); S.ocr.msg = why + " Résultat préparé affiché à la place."; }
+      else { o.status = "error"; o.msg = why; }
+    }
+  } else if (o.src) {
+    await new Promise(r => setTimeout(r, 900));
+    applyResult(o.src.result, "sim");
+  } else { o.status = "error"; o.msg = "La lecture par IA n'est pas disponible ici."; }
+  renderOcr();
+}
+
+function ocrToBasket() {
+  const o = S.ocr;
+  o.lines.filter(l => l.take && l.pid).forEach(l => {
+    const i = S.basket.findIndex(b => b.pid === l.pid);
+    if (i >= 0) S.basket[i].qty += l.qty; else S.basket.push({ pid: l.pid, qty: l.qty, disc: 0 });
+  });
+  if (o.rx.presc || o.rx.patient) S.rx = { ...S.rx, presc: o.rx.presc, patient: o.rx.patient, date: o.rx.date || S.rx.date };
+  S.ocr.open = false;
+  const ov = document.getElementById("overlay"); ov.hidden = true; ov.innerHTML = "";
+  S.error = ""; location.hash = "caisse"; render();
+}
+
+function renderOcr() {
+  const o = S.ocr, ov = document.getElementById("overlay");
+  if (!o.open) return;
+  const aiOn = AI.sample && AI.images;
+  const prodOpts = sel => `<option value="">— choisir —</option>` + S.products.map(p => `<option value="${p.id}" ${p.id === sel ? "selected" : ""}>${esc(p.name)} · stock ${avail(p)}</option>`).join("");
+  const rows = o.lines.map((l, i) => {
+    const p = l.pid && prod(l.pid), a = p ? avail(p) : 0, low = l.confiance < 0.8;
+    const gen = p && a < l.qty * (BOX[p.id] ? 1 : 1) ? S.products.find(x => x.id !== p.id && x.dci && x.dci === p.dci && avail(x) >= l.qty) : null;
+    return `<tr>
+      <td><input type="checkbox" data-ocr="take" data-i="${i}" ${l.take ? "checked" : ""} ${l.pid ? "" : "disabled"} aria-label="Délivrer"></td>
+      <td><div class="mono small">« ${esc(l.lu)} »</div><div class="small muted">${esc(l.posologie)}</div>
+        <span class="pill ${low ? "warn" : "ok"}">${low ? "à vérifier" : "lu"} · ${Math.round(l.confiance * 100)} %</span></td>
+      <td><select class="in" data-ocr="pid" data-i="${i}" style="min-width:180px">${prodOpts(l.pid)}</select>
+        ${p ? `<div class="small ${a < l.qty ? "" : "muted"}" style="${a < l.qty ? "color:var(--danger)" : ""}">stock ${a}${a < l.qty ? " — insuffisant" : ""}</div>` : `<div class="small" style="color:var(--warn)">non trouvé : choisissez</div>`}
+        ${gen ? `<button class="btn sm" data-ocr="gen" data-i="${i}" data-p="${gen.id}">Remplacer par ${esc(gen.name)} (stock ${avail(gen)})</button>` : ""}</td>
+      <td class="r"><input class="in amt" style="width:64px" inputmode="numeric" data-ocr="qty" data-i="${i}" value="${l.qty}"><div class="small muted">boîte(s)</div></td>
+    </tr>`;
+  }).join("");
+  ov.innerHTML = `<div class="ocr" role="dialog" aria-label="Lecture d'ordonnance">
+    <div class="ocr-head"><h2>Lire une ordonnance</h2>
+      <span class="pill ${aiOn ? "info" : "warn"}">${!AI.checked ? "…" : aiOn ? "IA activée (Claude)" : "Mode simulation"}</span>
+      <button class="btn sm" data-act="ocr-close" aria-label="Fermer">Fermer</button></div>
+    <div class="ocr-grid">
+      <div class="ocr-left">
+        <div class="row">${RX_SAMPLES.map(r => `<button class="chip" data-act="ocr-sample" data-id="${r.id}" aria-pressed="${o.src?.id === r.id}">Exemple : ${r.label}</button>`).join("")}</div>
+        ${aiOn ? `<label class="f">Ou une photo d'ordonnance<input class="in" type="file" accept="image/*" id="ocrFile"></label>` : `<p class="small muted" style="margin:0">${AI.checked ? "Ouvrez cette démo depuis Claude pour lire vos propres photos avec l'IA. Ici, le résultat des exemples est préparé à l'avance." : ""}</p>`}
+        ${o.imgUrl ? `<img class="ocr-img" src="${o.imgUrl}" alt="Ordonnance à lire">` : `<div class="empty">Choisissez un exemple${aiOn ? " ou une photo" : ""}.</div>`}
+        <button class="btn primary" data-act="ocr-read" ${o.blob && o.status !== "reading" ? "" : "disabled"}>${o.status === "reading" ? "Lecture en cours…" : "Lire l'ordonnance"}</button>
+      </div>
+      <div class="ocr-right">
+        ${o.msg ? `<div class="${o.status === "error" ? "err" : "note"}">${esc(o.msg)}</div>` : ""}
+        ${o.status === "done" ? `
+          ${o.mode === "sim" ? `<div class="note">Simulation : résultat préparé à l'avance pour cet exemple.</div>` : ""}
+          <div class="row">
+            <label class="f">Prescripteur<input class="in" data-ocr-rx="presc" value="${esc(o.rx.presc)}"></label>
+            <label class="f">Patient<input class="in" data-ocr-rx="patient" value="${esc(o.rx.patient)}"></label>
+            <label class="f">Date<input class="in" type="date" data-ocr-rx="date" value="${esc(o.rx.date)}"></label>
+          </div>
+          <div class="tbl-wrap"><table><thead><tr><th></th><th>Lu sur l'ordonnance</th><th>Produit</th><th class="r">Qté</th></tr></thead><tbody>${rows || `<tr><td colspan="4" class="empty">Aucun médicament reconnu.</td></tr>`}</tbody></table></div>
+          <p class="small muted" style="margin:0">Quantité = prises par jour × durée ÷ unités par boîte, arrondie au-dessus. Le pharmacien vérifie chaque ligne avant de délivrer.</p>
+          <button class="btn primary big" data-act="ocr-basket" ${o.lines.some(l => l.take && l.pid) ? "" : "disabled"}>Ajouter au panier et remplir l'ordonnance</button>`
+        : o.status === "reading" ? `<div class="empty">Lecture en cours… (quelques secondes avec l'IA)</div>`
+        : o.status === "idle" ? `<div class="empty">Le résultat s'affichera ici : médicaments lus, produit du stock correspondant, nombre de boîtes.</div>` : ""}
+        <p class="small muted" style="margin:0">Données de santé : en production, la photo n'est envoyée à un service d'IA qu'avec le consentement du patient et l'autorisation de l'INPDP. Ici, utilisez les exemples ou une ordonnance fictive.</p>
+      </div>
+    </div></div>`;
+  ov.hidden = false;
+}
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-act^='ocr'], [data-ocr='gen']"); if (!el) return;
+  const a = el.dataset.act, o = S.ocr;
+  if (a === "ocr-open") { o.open = true; renderOcr(); }
+  else if (a === "ocr-close") { o.open = false; const ov = document.getElementById("overlay"); ov.hidden = true; ov.innerHTML = ""; }
+  else if (a === "ocr-sample") openSample(el.dataset.id);
+  else if (a === "ocr-read") readRx();
+  else if (a === "ocr-basket") ocrToBasket();
+  else if (el.dataset.ocr === "gen") { const l = o.lines[+el.dataset.i]; l.pid = el.dataset.p; l.qty = boxesFor(l); l.take = true; renderOcr(); }
+});
+document.addEventListener("change", e => {
+  const el = e.target, o = S.ocr; if (!o.open) return;
+  if (el.id === "ocrFile" && el.files?.[0]) {
+    const f = el.files[0]; o.src = null; o.blob = f; o.status = "idle"; o.lines = []; o.msg = "";
+    const rd = new FileReader(); rd.onload = () => { o.imgUrl = rd.result; renderOcr(); }; rd.readAsDataURL(f);
+  } else if (el.dataset.ocr === "take") { o.lines[+el.dataset.i].take = el.checked; renderOcr(); }
+  else if (el.dataset.ocr === "pid") { const l = o.lines[+el.dataset.i]; l.pid = el.value || null; l.take = !!l.pid; if (l.pid) l.qty = boxesFor(l); renderOcr(); }
+  else if (el.dataset.ocr === "qty") { o.lines[+el.dataset.i].qty = Math.max(1, parseInt(el.value, 10) || 1); renderOcr(); }
+  else if (el.dataset.ocrRx) { o.rx[el.dataset.ocrRx] = el.value; }
+});
+
 window.addEventListener("hashchange", () => { if (!S.auth.in) return; S.error = ""; render(); window.scrollTo(0, 0); });
 render();
 document.querySelector("#loginForm .btn.primary")?.focus();
